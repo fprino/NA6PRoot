@@ -60,7 +60,9 @@ class NA6PFastTrackFitter
   void unsetSeed() { mIsSeedSet = false; }
   void setSeedFromTwoOutermostHits() { mSeedOption = kTwoPointSeed; }
   void setSeedFromThreeOutermostHits() { mSeedOption = kThreePointSeed; }
-  void computeSeed();
+  void computeSeed(int dir = -1);
+  void computeSeedOuter() { computeSeed(-1); }
+  void computeSeedInner() { computeSeed(1); }
   void printSeed() const;
 
   void addCluster(int jLay, const NA6PBaseCluster& cl);
@@ -76,7 +78,9 @@ class NA6PFastTrackFitter
 
   bool loadGeometry(const char* filename = "geometry.root", const char* geoname = "NA6P");
 
-  NA6PTrack* fitTrackPoints();
+  NA6PTrack* fitTrackPoints(int dir = -1, NA6PTrack* seed = nullptr);
+  NA6PTrack* fitTrackPointsInward() { return fitTrackPoints(-1); }
+  NA6PTrack* fitTrackPointsOutward(NA6PTrack* seed = nullptr) { return fitTrackPoints(1, seed); }
   bool updateTrack(NA6PTrack* trc, const NA6PBaseCluster* cl) const;
   int propagateToZ(NA6PTrack* trc, double zFrom, double zTo, int dir) const;
   int propagateToZ(NA6PTrack* trc, double zTo) const;

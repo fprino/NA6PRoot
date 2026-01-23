@@ -65,6 +65,10 @@ struct TrackFitted {
 enum class ExtendDirection { kInward,
                              kOutward };
 
+enum { kOnlyInward,
+       kBothWithOutwFit,
+       kBothWoOutwFit };
+
 class NA6PTrackerCA
 {
  public:
@@ -77,6 +81,9 @@ class NA6PTrackerCA
   void setNLayers(int n);
   void setStartLayer(int start) { mLayerStart = start; }
   void setMaxNumberOfSharedClusters(int n) { mMaxSharedClusters = n; }
+  void checkChi2OnlyInward() { mChi2TrackCluOpt = kOnlyInward; }
+  void checkChi2OutwardWithRefit() { mChi2TrackCluOpt = kBothWithOutwFit; }
+  void checkChi2OutwardWithoutRefit() { mChi2TrackCluOpt = kBothWoOutwFit; }
   void setNumberOfIterations(int nIter);
   void setIterationParams(int iter,
                           double maxDeltaThetaTracklets,
@@ -95,89 +102,89 @@ class NA6PTrackerCA
   void printConfiguration() const;
   int getNIterations() const { return mNIterationsCA; }
   bool loadGeometry(const char* filename, const char* geoname = "NA6P");
-  
-  template<typename ClusterType>
+
+  template <typename ClusterType>
   void findTracks(std::vector<ClusterType>& cluArr, TVector3 primVert);
-  
+
   std::vector<NA6PTrack> getTracks();
 
-protected:
+ protected:
   // methods used in tracking
-  template<typename ClusterType>
+  template <typename ClusterType>
   void sortClustersByLayerAndEta(std::vector<ClusterType>& cluArr,
-				 std::vector<int>& firstIndex,
-				 std::vector<int>& lastIndex);
+                                 std::vector<int>& firstIndex,
+                                 std::vector<int>& lastIndex);
   void sortTrackletsByLayerAndIndex(std::vector<TrackletCandidate>& tracklets,
-				    std::vector<int>& firstIndex,
-				    std::vector<int>& lastIndex);
+                                    std::vector<int>& firstIndex,
+                                    std::vector<int>& lastIndex);
   void sortCellsByLayerAndIndex(std::vector<CellCandidate>& cells,
-				std::vector<int>& firstIndex,
-				std::vector<int>& lastIndex);
-  template<typename ClusterType>
+                                std::vector<int>& firstIndex,
+                                std::vector<int>& lastIndex);
+  template <typename ClusterType>
   void computeLayerTracklets(const std::vector<ClusterType>& cluArr,
-			     const std::vector<int>& firstIndex,
-			     const std::vector<int>& lastIndex,
-			     std::vector<TrackletCandidate>& tracklets,
-			     double deltaThetaMax,
-			     double deltaPhiMax);
-  template<typename ClusterType>
+                             const std::vector<int>& firstIndex,
+                             const std::vector<int>& lastIndex,
+                             std::vector<TrackletCandidate>& tracklets,
+                             double deltaThetaMax,
+                             double deltaPhiMax);
+  template <typename ClusterType>
   void computeLayerCells(const std::vector<TrackletCandidate>& tracklets,
-			 const std::vector<int>& firstIndex,
-			 const std::vector<int>& lastIndex,
-			 const std::vector<ClusterType>& cluArr,
-			 std::vector<CellCandidate>& cells,
-			 double deltaTanLMax,
-			 double deltaPhiMax,
-			 double deltaPxPzMax,
-			 double deltaPyPzMax,
-			 double maxChi2TrClu,
-			 double maxChi2NDF);
-  template<typename ClusterType>
+                         const std::vector<int>& firstIndex,
+                         const std::vector<int>& lastIndex,
+                         const std::vector<ClusterType>& cluArr,
+                         std::vector<CellCandidate>& cells,
+                         double deltaTanLMax,
+                         double deltaPhiMax,
+                         double deltaPxPzMax,
+                         double deltaPyPzMax,
+                         double maxChi2TrClu,
+                         double maxChi2NDF);
+  template <typename ClusterType>
   double computeTrackToClusterChi2(const NA6PTrack& track,
-				   const ClusterType& clu);
-  template<typename ClusterType>
+                                   const ClusterType& clu);
+  template <typename ClusterType>
   bool fitTrackPointsFast(const std::vector<int>& cluIDs,
-			  const std::vector<ClusterType>& cluArr,
-			  NA6PTrack& fitTrack,
-			  double maxChi2TrClu,
-			  double maxChi2NDF);
-  template<typename ClusterType>
+                          const std::vector<ClusterType>& cluArr,
+                          NA6PTrack& fitTrack,
+                          double maxChi2TrClu,
+                          double maxChi2NDF);
+  template <typename ClusterType>
   void findCellsNeighbours(const std::vector<CellCandidate>& cells,
-			   const std::vector<int>& firstIndex,
-			   const std::vector<int>& lastIndex,
-			   std::vector<std::pair<int,int>>& cneigh,
-			   const std::vector<ClusterType>& cluArr,
-			   double maxChi2TrClu);
-  template<typename ClusterType>
+                           const std::vector<int>& firstIndex,
+                           const std::vector<int>& lastIndex,
+                           std::vector<std::pair<int, int>>& cneigh,
+                           const std::vector<ClusterType>& cluArr,
+                           double maxChi2TrClu);
+  template <typename ClusterType>
   std::vector<TrackCandidate> prolongSeed(const TrackCandidate& seed,
-					  const std::vector<CellCandidate>& cells,
-					  const std::vector<int>& firstIndex,
-					  const std::vector<int>& lastIndex,
-					  const std::vector<ClusterType>& cluArr,
-					  double maxChi2TrClu,
-					  ExtendDirection dir);
-  template<typename ClusterType>
-  void findRoads(const std::vector<std::pair<int,int>>& cneigh,
-		 const std::vector<CellCandidate>& cells,
-		 const std::vector<int>& firstIndex,
-		 const std::vector<int>& lastIndex,
-		 const std::vector<TrackletCandidate>& tracklets,
-		 const std::vector<ClusterType>& cluArr,
-		 std::vector<TrackCandidate>& trackCands,
-		 double maxChi2TrClu);
-  template<typename ClusterType>
+                                          const std::vector<CellCandidate>& cells,
+                                          const std::vector<int>& firstIndex,
+                                          const std::vector<int>& lastIndex,
+                                          const std::vector<ClusterType>& cluArr,
+                                          double maxChi2TrClu,
+                                          ExtendDirection dir);
+  template <typename ClusterType>
+  void findRoads(const std::vector<std::pair<int, int>>& cneigh,
+                 const std::vector<CellCandidate>& cells,
+                 const std::vector<int>& firstIndex,
+                 const std::vector<int>& lastIndex,
+                 const std::vector<TrackletCandidate>& tracklets,
+                 const std::vector<ClusterType>& cluArr,
+                 std::vector<TrackCandidate>& trackCands,
+                 double maxChi2TrClu);
+  template <typename ClusterType>
   void fitAndSelectTracks(const std::vector<TrackCandidate>& trackCands,
-			  const std::vector<ClusterType>& cluArr,
-			  std::vector<TrackFitted>& tracks,
-			  double maxChi2TrClu,
-			  int minNClu,
-			  double maxChi2NDF);
-  template<typename T, typename ClusterType>
+                          const std::vector<ClusterType>& cluArr,
+                          std::vector<TrackFitted>& tracks,
+                          double maxChi2TrClu,
+                          int minNClu,
+                          double maxChi2NDF);
+  template <typename T, typename ClusterType>
   void printStats(const std::vector<T>& candidates,
-		  const std::vector<ClusterType>& cluArr,
-		  const std::vector<CellCandidate>& cells,
-		  const std::string& label,
-		  int requiredClus = -1);
+                  const std::vector<ClusterType>& cluArr,
+                  const std::vector<CellCandidate>& cells,
+                  const std::string& label,
+                  int requiredClus = -1);
 
  private:
   int mNLayers = 5;
@@ -187,6 +194,7 @@ protected:
   std::vector<bool> mIsClusterUsed = {};
   std::vector<TrackFitted> mFinalTracks = {};
   int mMaxSharedClusters = 0;
+  int mChi2TrackCluOpt = kOnlyInward;
   bool mVerbose = false;
   int mNIterationsCA = 2;
   double mMaxDeltaThetaTrackletsCA[kMaxIterationsCA] = {0.04, 0.1, 0.15, 0.3, 999.0, 999.0, 999.0, 999.0, 999.0, 999.0};
@@ -198,7 +206,7 @@ protected:
   double mMaxChi2TrClCellsCA[kMaxIterationsCA] = {100., 500., 999., 999.0, 999.0, 999.0, 999.0, 999.0, 999.0, 999.0};
   double mMaxChi2ndfCellsCA[kMaxIterationsCA] = {100., 500., 999.0, 999.0, 999.0, 999.0, 999.0, 999.0, 999.0, 999.0};
   double mMaxChi2ndfTracksCA[kMaxIterationsCA] = {100., 500., 999.0, 999.0, 999.0, 999.0, 999.0, 999.0, 999.0, 999.0};
-  int    mMinNClusTracksCA[kMaxIterationsCA] = {5, 3, 0, 0, 0, 0, 0, 0, 0, 0};
+  int mMinNClusTracksCA[kMaxIterationsCA] = {5, 3, 0, 0, 0, 0, 0, 0, 0, 0};
 
   ClassDefNV(NA6PTrackerCA, 1);
 };

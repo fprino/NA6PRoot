@@ -515,16 +515,48 @@ void NA6PTrackerCA::findCellsNeighbours(const std::vector<CellCandidate>& cells,
           LOGP(error, "mismatch in cluIDs");
           continue;
         }
-        int jClu2 = cell2.cluIDs[2];
-        const auto& clu2 = cluArr[jClu2];
-        double cluchi2a = computeTrackToClusterChi2(cell1.trackFitFast, clu2);
-        if (cluchi2a > maxChi2TrClu)
-          continue;
+
+        if (mChi2TrackCluOpt == kBothWoOutwFit) {
+          int jClu2 = cell2.cluIDs[2];
+          const auto& clu2 = cluArr[jClu2];
+          double cluchi2a = computeTrackToClusterChi2(cell1.trackFitFast, clu2);
+          if (cluchi2a > maxChi2TrClu)
+            continue;
+        }
+
         int jClu0 = cell1.cluIDs[0];
         const auto& clu0 = cluArr[jClu0];
         double cluchi2b = computeTrackToClusterChi2(cell2.trackFitFast, clu0);
         if (cluchi2b > maxChi2TrClu)
           continue;
+
+        if (mChi2TrackCluOpt == kBothWithOutwFit) {
+          int nClus = cell1.cluIDs.size();
+          mTrackFitter->cleanupAndStartFit();
+          mTrackFitter->setMaxChi2Cl(maxChi2TrClu);
+          std::vector<const ClusterType*> clusters;
+          clusters.reserve(nClus);
+          for (int jClu = 0; jClu < nClus; jClu++) {
+            int cluID = cell1.cluIDs[jClu];
+            const auto& clu = cluArr[cluID];
+            int nLay = clu.getLayer() - mLayerStart;
+            clusters.push_back(&clu); // store the pointer for later use
+            mTrackFitter->addCluster(nLay, clu);
+          }
+
+          std::unique_ptr<NA6PTrack> fitTrackOutw(mTrackFitter->fitTrackPointsOutward());
+          if (!fitTrackOutw) {
+            LOGP(info, "Outward track fit failed");
+            continue;
+          }
+          double chi2ndf = fitTrackOutw->getNormChi2();
+          int jClu2 = cell2.cluIDs[2];
+          const auto& clu2 = cluArr[jClu2];
+          double cluchi2a = computeTrackToClusterChi2(*fitTrackOutw, clu2);
+          if (cluchi2a > maxChi2TrClu)
+            continue;
+        }
+
         cneigh.push_back(std::make_pair(jCe1, jCe2));
       }
     }
@@ -582,18 +614,27 @@ std::vector<TrackCandidate> NA6PTrackerCA::prolongSeed(const TrackCandidate& see
           }
         }
         // --- Chi2 checks ---
-        const auto& fitNext = ccNext.trackFitFast;
-        int cluRefIndex = (dir == ExtendDirection::kInward) ? 2 : 0;
-        const auto& cluRef = cluArr[refCell.cluIDs[cluRefIndex]];
-        double chi2a = computeTrackToClusterChi2(fitNext, cluRef);
-        if (chi2a > maxChi2TrClu)
-          continue;
-        const auto& fitRef = refCell.trackFitFast;
-        int cluNextIndex = (dir == ExtendDirection::kInward) ? 0 : 2;
-        const auto& cluNext = cluArr[ccNext.cluIDs[cluNextIndex]];
-        double chi2b = computeTrackToClusterChi2(fitRef, cluNext);
-        if (chi2b > maxChi2TrClu)
-          continue;
+        if (mChi2TrackCluOpt != kOnlyInward) {
+          const auto& fitNext = ccNext.trackFitFast;
+          int cluRefIndex = (dir == ExtendDirection::kInward) ? 2 : 0;
+          const auto& cluRef = cluArr[refCell.cluIDs[cluRefIndex]];
+          double chi2a = computeTrackToClusterChi2(fitNext, cluRef);
+          if (chi2a > maxChi2TrClu)
+            continue;
+          const auto& fitRef = refCell.trackFitFast;
+          int cluNextIndex = (dir == ExtendDirection::kInward) ? 0 : 2;
+          const auto& cluNext = cluArr[ccNext.cluIDs[cluNextIndex]];
+          double chi2b = computeTrackToClusterChi2(fitRef, cluNext);
+          if (chi2b > maxChi2TrClu)
+            continue;
+        } else {
+          // Compute chi2 only for the innermost cluster of the cells to be connected
+          const auto& fitCurr = (dir == ExtendDirection::kInward) ? refCell.trackFitFast : ccNext.trackFitFast;
+          const auto& cluToAdd = (dir == ExtendDirection::kInward) ? cluArr[ccNext.cluIDs[0]] : cluArr[refCell.cluIDs[0]];
+          double chi2 = computeTrackToClusterChi2(fitCurr, cluToAdd);
+          if (chi2 > maxChi2TrClu)
+            continue;
+        }
         // create new prolonged track
         TrackCandidate extended = cand;
         if (dir == ExtendDirection::kInward) {

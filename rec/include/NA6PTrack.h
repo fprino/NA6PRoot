@@ -87,6 +87,9 @@ class NA6PTrack
   double getXLab() const { return mExtTrack.getY(); }
   double getYLab() const { return mExtTrack.getZ(); }
   double getZLab() const { return negDir() ? -mExtTrack.getX() : mExtTrack.getX(); }
+  double getX() const { return getXLab(); }
+  double getY() const { return getYLab(); }
+  double getZ() const { return getZLab(); }
   double getZLabOuter() const { return negDir() ? -mOuter.getX() : mOuter.getX(); }
   double getZLabVertexConstrained() const { return negDir() ? -mConstrained.getX() : mConstrained.getX(); }
 

@@ -1,3 +1,6 @@
+#ifndef _NA6P_HELIX_HELPER_
+#define _NA6P_HELIX_HELPER_
+
 struct CircleXZ {
 
     float xC, zC, rC;   // centre and radius of helix projection in XZ bending plane
@@ -236,3 +239,5 @@ struct CrossInfo {
   }
   ClassDefNV(CrossInfo, 1);
 };
+
+#endif

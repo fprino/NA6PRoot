@@ -97,6 +97,23 @@ Bool_t NA6PTrack::init(const double* xyz, const double* pxyz, int sign, double e
   return true;
 }
 
+std::array<float, 3> NA6PTrack::getCircleParams(float by) const
+{
+  // get circle params as {R, Xcenter, Zcenter}, for straight line just set to current coordinates
+  constexpr double ZeroCurv = 1e-8;
+  float crv = mExtTrack.getC(by);
+  if (std::abs(crv) > ZeroCurv) {
+    float crvi = 1.0 / crv;
+    float sn = mExtTrack.getSnp();
+    float cs = std::sqrt((1. - sn) * (1. + sn));
+    if (mExtTrack.Px() < 0) cs = -cs;
+    float xcLab = mExtTrack.getY() + cs * crvi;
+    float zcLab = mExtTrack.getX() - sn * crvi;
+    return {std::abs(crvi), xcLab, zcLab};
+  } else {
+    return {0., static_cast<float>(mExtTrack.getY()),static_cast<float>( mExtTrack.getX())};
+  }
+}
 //_______________________________________________________________________
 Bool_t NA6PTrack::propagateToZBxByBz(double z, double maxDZ, double xOverX0, double xTimesRho, bool outer, double density, double atomicZ, double zOverA)
 {

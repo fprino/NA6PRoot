@@ -64,6 +64,9 @@ class NA6PTrack
   double getMatchChi2() const { return mMatchChi2; }
   const ExtTrackPar& getTrackExtParam() const { return mExtTrack; }
   const double* getCovariance() const { return mExtTrack.getCovariance(); }
+  double getCurvature(float by) const { return mExtTrack.getC(by); }
+  std::array<float, 3> getCircleParams(float by) const;
+
   const ExtTrackPar& getOuterParam() const { return mOuter; }
   ExtTrackPar& getOuterParam() { return mOuter; }
   const ExtTrackPar& getVertexConstrainedParam() const { return mConstrained; }
@@ -97,6 +100,19 @@ class NA6PTrack
   double getZTF() const { return mExtTrack.getZ(); }
   void getXYZ(double* xyz) const;
   void getPXYZ(double* pxyz) const;
+  template <typename T = float>
+  std::array<T, 3> getXYZ() const
+  {
+    return std::array<T, 3>{static_cast<float>(getXLab()), static_cast<float>(getYLab()), static_cast<float>(getZLab())};
+  }
+
+  template <typename T = float>
+  std::array<T, 3> getPXYZ() const
+  {
+    double pxyz[3];
+    getPXYZ(pxyz);
+    return {static_cast<float>(pxyz[0]), static_cast<float>(pxyz[1]), static_cast<float>(pxyz[2])};
+  }
   double getP() const { return mExtTrack.getP(); }
   void getXYZOuter(double* xyz) const;
   void getPXYZOuter(double* pxyz) const;
@@ -108,6 +124,7 @@ class NA6PTrack
   double getSigmaX2() const { return mExtTrack.getSigmaY2(); }
   double getSigmaY2() const { return mExtTrack.getSigmaZ2(); }
   double getSigmaXY() const { return mExtTrack.getSigmaZY(); }
+  double getSigmaYX() const { return getSigmaXY(); }
   double getSigmaP2() const;
   double getSigmaPX2() const;
   double getSigmaPY2() const;

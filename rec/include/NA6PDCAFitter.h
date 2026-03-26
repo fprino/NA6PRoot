@@ -21,7 +21,7 @@ struct FwdTrackCovI {
       cxy = std::sqrt(cxx * cyy) * (cxy > 0 ? 0.98f : -0.98f);
       detXY = cxx * cyy - cxy * cxy;
       res = false;
-    } 
+    }
     auto detXYI = 1. / detXY;
     sxx = cyy * detXYI;
     syy = cxx * detXYI;
@@ -38,7 +38,8 @@ struct FwdTrackDeriv {
   void set(const NA6PTrack& trc, float by)
   {
     auto pxyz = trc.getPXYZ();
-    if (std::abs(pxyz[2]) < 1e-9) return;
+    if (std::abs(pxyz[2]) < 1e-9)
+      return;
     dxdz = pxyz[0] / pxyz[2];
     dydz = pxyz[1] / pxyz[2];
     // Second derivatives:
@@ -69,14 +70,13 @@ class NA6PDCAFitterN
   using MatSym3D = ROOT::Math::SMatrix<double, 3, 3, ROOT::Math::MatRepSym<double, 3>>;
   using MatStd3D = ROOT::Math::SMatrix<double, 3, 3, ROOT::Math::MatRepStd<double, 3>>;
   using MatSymND = ROOT::Math::SMatrix<double, N, N, ROOT::Math::MatRepSym<double, N>>;
-  using ArrTrack = std::array<NA6PTrack, N>;         // container for prongs (tracks) at single vertex cand.
-  using ArrTrackCovI = std::array<FwdTrackCovI, N>;  // container for inv.cov.matrices at single vertex cand.
-  using ArrTrCoef = std::array<MatStd3D, N>;         // container of TrackCoefVtx coefficients at single vertex cand.
-  using ArrTrDer = std::array<FwdTrackDeriv, N>;     // container of Track 1st and 2nd derivative over their Z param
-  using ArrTrPos = std::array<Vec3D, N>;             // container of Track positions
-  
- public:
+  using ArrTrack = std::array<NA6PTrack, N>;        // container for prongs (tracks) at single vertex cand.
+  using ArrTrackCovI = std::array<FwdTrackCovI, N>; // container for inv.cov.matrices at single vertex cand.
+  using ArrTrCoef = std::array<MatStd3D, N>;        // container of TrackCoefVtx coefficients at single vertex cand.
+  using ArrTrDer = std::array<FwdTrackDeriv, N>;    // container of Track 1st and 2nd derivative over their Z param
+  using ArrTrPos = std::array<Vec3D, N>;            // container of Track positions
 
+ public:
   enum FitStatus : uint8_t { // fit status of crossing hypothesis
     None,                    // no status set (should not be possible!)
 
@@ -201,10 +201,9 @@ class NA6PDCAFitterN
   float getMinVertZ() const { return mMinVertZ; }
   float getMaxVertZ() const { return mMaxVertZ; }
 
-
   template <class... Tr>
   int process(const Tr&... args);
-  
+
  protected:
   bool calcPCACoefs();
   bool calcInverseWeight();
@@ -223,8 +222,8 @@ class NA6PDCAFitterN
   bool minimizeChi2NoErr();
   bool roughDZCut() const;
   bool closerToAlternative() const;
-  bool propagateToZ(NA6PTrack& t, float z) { return true;} // TODO
-  bool propagateParamToZ(NA6PTrack& t, float z) { return true;} // TODO
+  bool propagateToZ(NA6PTrack& t, float z) { return true; }      // TODO
+  bool propagateParamToZ(NA6PTrack& t, float z) { return true; } // TODO
 
   static double getAbsMax(const VecND& v);
   ///< track param positions at V0 candidate (no check for the candidate validity)
@@ -232,12 +231,12 @@ class NA6PDCAFitterN
 
   template <class T, class... Tr>
   void assign(int i, const T& t, const Tr&... args)
-    {
-      mOrigTrPtr[i] = &t;
-      assign(i + 1, args...);
-    }
+  {
+    mOrigTrPtr[i] = &t;
+    assign(i + 1, args...);
+  }
 
- void clear()
+  void clear()
   {
     mCurHyp = 0;
     mAllowAltPreference = true;
@@ -259,8 +258,7 @@ class NA6PDCAFitterN
   void setBadCovPolicy(BadCovPolicy v) { mBadCovPolicy = v; }
   BadCovPolicy getBadCovPolicy() const { return mBadCovPolicy; }
 
-  
-private:
+ private:
   // vectors of 1st derivatives of track local residuals over Z parameters
   std::array<std::array<Vec3D, N>, N> mDResidDz;
   // vectors of 1nd derivatives of track local residuals over Z parameters
@@ -289,24 +287,24 @@ private:
   int mCrossIDCur = 0;
   int mCrossIDAlt = -1;
   BadCovPolicy mBadCovPolicy{BadCovPolicy::Discard}; // what to do in case of non-pos-def. cov. matrix, see BadCovPolicy enum
-  bool mAllowAltPreference = true;            // if the fit converges to alternative PCA seed, abandon the current one
-  bool mUseAbsDCA = false;                    // use abs. distance minimization rather than chi2
-  bool mWeightedFinalPCA = false;             // recalculate PCA as a cov-matrix weighted mean, even if absDCA method was used
-  bool mPropagateToPCA = true;                // create tracks version propagated to PCA
-  bool mUsePropagator = false;                // use propagator with 3D B-field, set automatically if material correction is requested
-  bool mRefitWithMatCorr = false;             // when doing propagateTracksToVertex, propagate tracks to V0 with material corrections and rerun minimization again
-  bool mIsCollinear = false;                  // use collinear fits when there 2 crossing points
-  int mMaxIter = 20;                          // max number of iterations
-  float mBy = 0;                              // by field, to be set by user
-  float mMaxVertX = 30.;                      // maximum vertex X coordinate
-  float mMinVertZ = -10.;                     // minimum vertex Z coordinate
-  float mMaxVertZ = 40.;                      // maximum vertex Z coordinate
-  float mMaxDZIni = 4.;                       // reject (if>0) PCA candidate if tracks DZ exceeds threshold
-  float mMaxDXZIni = 4.;                      // reject (if>0) PCA candidate if tracks dXY exceeds threshold
-  float mMinParamChange = 1e-3;               // stop iterations if largest change of any X is smaller than this
-  float mMinRelChi2Change = 0.9;              // stop iterations is chi2/chi2old > this
-  float mMaxChi2 = 100;                       // abs cut on chi2 or abs distance
-  float mMaxDist2ToMergeSeeds = 1.;           // merge 2 seeds to their average if their distance^2 is below the threshold
+  bool mAllowAltPreference = true;                   // if the fit converges to alternative PCA seed, abandon the current one
+  bool mUseAbsDCA = false;                           // use abs. distance minimization rather than chi2
+  bool mWeightedFinalPCA = false;                    // recalculate PCA as a cov-matrix weighted mean, even if absDCA method was used
+  bool mPropagateToPCA = true;                       // create tracks version propagated to PCA
+  bool mUsePropagator = false;                       // use propagator with 3D B-field, set automatically if material correction is requested
+  bool mRefitWithMatCorr = false;                    // when doing propagateTracksToVertex, propagate tracks to V0 with material corrections and rerun minimization again
+  bool mIsCollinear = false;                         // use collinear fits when there 2 crossing points
+  int mMaxIter = 20;                                 // max number of iterations
+  float mBy = 0;                                     // by field, to be set by user
+  float mMaxVertX = 30.;                             // maximum vertex X coordinate
+  float mMinVertZ = -10.;                            // minimum vertex Z coordinate
+  float mMaxVertZ = 40.;                             // maximum vertex Z coordinate
+  float mMaxDZIni = 4.;                              // reject (if>0) PCA candidate if tracks DZ exceeds threshold
+  float mMaxDXZIni = 4.;                             // reject (if>0) PCA candidate if tracks dXY exceeds threshold
+  float mMinParamChange = 1e-3;                      // stop iterations if largest change of any X is smaller than this
+  float mMinRelChi2Change = 0.9;                     // stop iterations is chi2/chi2old > this
+  float mMaxChi2 = 100;                              // abs cut on chi2 or abs distance
+  float mMaxDist2ToMergeSeeds = 1.;                  // merge 2 seeds to their average if their distance^2 is below the threshold
 
   ClassDefNV(NA6PDCAFitterN, 1);
 };
@@ -431,7 +429,7 @@ template <int N, typename... Args>
 void NA6PDCAFitterN<N, Args...>::calcResidDerivatives()
 {
   //< calculate matrix of derivatives for weighted chi2: residual i vs parameter X of track j
-  for (int i = N; i--;) { // residual being differentiated
+  for (int i = N; i--;) {                     // residual being differentiated
     for (int j = N; j--;) {                   // track over which we differentiate
       const auto& matT = mTrCFVT[mCurHyp][j]; // coefficient matrix for track J
       const auto& trDz = mTrDer[mCurHyp][j];  // track point derivs over track Z param
@@ -458,7 +456,7 @@ void NA6PDCAFitterN<N, Args...>::calcResidDerivatives()
         // dr2[2] += 0 (Since d2z/dz2 is identically zero)
       }
     } // track over which we differentiate
-  } // residual being differentiated
+  }   // residual being differentiated
 }
 
 //__________________________________________________________________________
@@ -482,7 +480,7 @@ void NA6PDCAFitterN<N, Args...>::calcResidDerivativesNoErr()
     for (int j = i; j--;) { // track over which we differentiate
       auto& dr1ij = mDResidDz[i][j];
       auto& dr1ji = mDResidDz[j][i];
-      const auto& trDzj = mTrDer[mCurHyp][j];        // track point derivs over track Z param
+      const auto& trDzj = mTrDer[mCurHyp][j]; // track point derivs over track Z param
 
       // calculate DResid_i/Dz_j = (delta_ij - R_ij) * DTrack_j/Dz_j  for j<i
       dr1ij[0] = -trDzj.dxdz * NInv;
@@ -507,7 +505,7 @@ void NA6PDCAFitterN<N, Args...>::calcResidDerivativesNoErr()
       dr2ji[2] = 0;
 
     } // track over which we differentiate
-  } // residual being differentiated
+  }   // residual being differentiated
 }
 
 //__________________________________________________________________________
@@ -546,7 +544,7 @@ void NA6PDCAFitterN<N, Args...>::calcChi2Derivatives()
           const auto& res = mTrRes[mCurHyp][k];    // vector of residuals of track k
           const auto& covI = mTrcEInv[mCurHyp][k]; // inverse cov matrix of track k
           const auto& dr2ij = mD2ResidDz2[k][j];   // vector of k-th residuals 2nd derivative over Z params of track j
-          dchi2 += res[0] * ( covI.sxx * dr2ij[0] + covI.sxy * dr2ij[1]) + res[1] * ( covI.sxy * dr2ij[0] + covI.syy * dr2ij[1]) + res[2] * covI.szz * dr2ij[2];
+          dchi2 += res[0] * (covI.sxx * dr2ij[0] + covI.sxy * dr2ij[1]) + res[1] * (covI.sxy * dr2ij[0] + covI.syy * dr2ij[1]) + res[2] * covI.szz * dr2ij[2];
         }
       }
     }
@@ -718,8 +716,8 @@ bool NA6PDCAFitterN<N, Args...>::propagateTracksToVertex(int icand)
   }
 
   for (int i = N; i--;) {
-    if (mUseAbsDCA || mUsePropagator /*|| mMatCorr != o2::base::Propagator::MatCorrType::USEMatCorrNONE*/ ) { //TODO: update after merging the recNative branch
-      mCandTr[ord][i] = *mOrigTrPtr[i]; // fetch the track again, as mCandTr might have been propagated w/o errors or material corrections might be wrong
+    if (mUseAbsDCA || mUsePropagator /*|| mMatCorr != o2::base::Propagator::MatCorrType::USEMatCorrNONE*/) { // TODO: update after merging the recNative branch
+      mCandTr[ord][i] = *mOrigTrPtr[i];                                                                      // fetch the track again, as mCandTr might have been propagated w/o errors or material corrections might be wrong
     }
     auto z = mPCA[ord][2]; // z of PCA
     if (!propagateToZ(mCandTr[ord][i], z)) {

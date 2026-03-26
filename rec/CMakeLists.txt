@@ -35,7 +35,7 @@ set(DICTIONARY_HEADERS
   NA6PTrackerCA.h
   NA6PFastTrackFitter.h
   NA6PMatching.h
-  NA6PHelixHelpers.h
+  NA6PHelixHelper.h
   NA6PDCAFitter.h
   ) # Add all class headers requiring dictionary
   

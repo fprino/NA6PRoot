@@ -4,7 +4,7 @@
 #include <Math/SVector.h>
 #include <Math/SMatrix.h>
 #include "NA6PTrack.h"
-#include "NA6PHelixHelpers.h"
+#include "NA6PHelixHelper.h"
 
 struct FwdTrackCovI {
   float sxx, syy, sxy, szz;
@@ -68,7 +68,8 @@ class NA6PDCAFitterN
   using MatSymND = ROOT::Math::SMatrix<double, N, N, ROOT::Math::MatRepSym<double, N>>;
   using ArrTrack = std::array<NA6PTrack, N>;         // container for prongs (tracks) at single vertex cand.
   using ArrTrackCovI = std::array<FwdTrackCovI, N>;  // container for inv.cov.matrices at single vertex cand.
-  using ArrTrPos = std::array<Vec3D, N>;         // container of Track positions
+  using ArrTrDer = std::array<FwdTrackDeriv, N>;     // container of Track 1st and 2nd derivative over their Z param
+  using ArrTrPos = std::array<Vec3D, N>;             // container of Track positions
   
  public:
 
@@ -118,10 +119,10 @@ class NA6PDCAFitterN
   bool calcPCACoefs() { return true;} // TODO;
   void calcPCA() {}; //TODO
   void calcResidDerivatives() {}; //TODO
-  void calcTrackResiduals() {}; //TODO
-  void calcTrackDerivatives() {};//TODO
+  void calcTrackResiduals();
+  void calcTrackDerivatives();
   void calcChi2Derivatives() {}; //TODO
-  double calcChi2() const {return 0.;} //TODO
+  double calcChi2() const;
   bool minimizeChi2();
   bool minimizeChi2NoErr() { return true; } // TODO
   bool roughDZCut() const;
@@ -136,7 +137,9 @@ class NA6PDCAFitterN
   std::array<int, MAXHYP> mOrder{0};
   std::array<ArrTrack, MAXHYP> mCandTr;       // tracks at each cond. vertex (Note: Errors are at seed XZ point)
   std::array<ArrTrackCovI, MAXHYP> mTrcEInv;  // errors for each track at each cand. vertex
+  std::array<ArrTrDer, MAXHYP> mTrDer;        // Track derivatives
   std::array<ArrTrPos, MAXHYP> mTrPos;        // Track positions
+  std::array<ArrTrPos, MAXHYP> mTrRes;        // Track residuals
   std::array<Vec3D, MAXHYP> mPCA;             // PCA for each vertex candidate
   std::array<float, MAXHYP> mChi2 = {0};      // Chi2 at PCA candidate
   std::array<int, MAXHYP> mNIters;            // number of iterations for each seed
@@ -274,6 +277,37 @@ bool NA6PDCAFitterN<N, Args...>::roughDZCut() const
   return accept;
 }
 
+//___________________________________________________________________
+template <int N, typename... Args>
+void NA6PDCAFitterN<N, Args...>::calcTrackResiduals()
+{
+  // calculate residuals in the global frame
+  for (int i = N; i--;) {
+    mTrRes[mCurHyp][i] = mTrPos[mCurHyp][i] - mPCA[mCurHyp];
+  }
+}
+//___________________________________________________________________
+template <int N, typename... Args>
+void NA6PDCAFitterN<N, Args...>::calcTrackDerivatives()
+{
+  // calculate track derivatives over Z param
+  for (int i = N; i--;) {
+    mTrDer[mCurHyp][i].set(mCandTr[mCurHyp][i], mBy);
+  }
+}
+//___________________________________________________________________
+template <int N, typename... Args>
+double NA6PDCAFitterN<N, Args...>::calcChi2() const
+{
+  // calculate current chi2
+  double chi2 = 0;
+  for (int i = N; i--;) {
+    const auto& res = mTrRes[mCurHyp][i];
+    const auto& covI = mTrcEInv[mCurHyp][i];
+    chi2 += res[0] * res[0] * covI.sxx + res[1] * res[1] * covI.syy + res[2] * res[2] * covI.szz + 2. * res[0] * res[1] * covI.sxy;
+  }
+  return chi2;
+}
 //___________________________________________________________________
 template <int N, typename... Args>
 bool NA6PDCAFitterN<N, Args...>::minimizeChi2()

@@ -7,11 +7,11 @@
 #include "NA6PTrack.h"
 #include "NA6PHelixHelper.h"
 
-struct FwdTrackCovI {
+struct TrackCovI {
   float sxx, syy, sxy, szz;
 
-  FwdTrackCovI(const NA6PTrack& trc, float zerrFactor = 1.f) { set(trc, zerrFactor); }
-  FwdTrackCovI() = default;
+  TrackCovI(const NA6PTrack& trc, float zerrFactor = 1.f) { set(trc, zerrFactor); }
+  TrackCovI() = default;
   bool set(const NA6PTrack& trc, float zerrFactor = 1.f)
   {
     float cxx = trc.getSigmaX2(), cyy = trc.getSigmaY2(), cxy = trc.getSigmaYX(), czz = cyy * zerrFactor;
@@ -31,10 +31,10 @@ struct FwdTrackCovI {
   }
 };
 
-struct FwdTrackDeriv {
+struct TrackDeriv {
   float dxdz, dydz, d2xdz2, d2ydz2;
-  FwdTrackDeriv() = default;
-  FwdTrackDeriv(const NA6PTrack& trc, float by) { set(trc, by); }
+  TrackDeriv() = default;
+  TrackDeriv(const NA6PTrack& trc, float by) { set(trc, by); }
   void set(const NA6PTrack& trc, float by)
   {
     auto pxyz = trc.getPXYZ();
@@ -70,13 +70,19 @@ class NA6PDCAFitterN
   using MatSym3D = ROOT::Math::SMatrix<double, 3, 3, ROOT::Math::MatRepSym<double, 3>>;
   using MatStd3D = ROOT::Math::SMatrix<double, 3, 3, ROOT::Math::MatRepStd<double, 3>>;
   using MatSymND = ROOT::Math::SMatrix<double, N, N, ROOT::Math::MatRepSym<double, N>>;
-  using ArrTrack = std::array<NA6PTrack, N>;        // container for prongs (tracks) at single vertex cand.
-  using ArrTrackCovI = std::array<FwdTrackCovI, N>; // container for inv.cov.matrices at single vertex cand.
-  using ArrTrCoef = std::array<MatStd3D, N>;        // container of TrackCoefVtx coefficients at single vertex cand.
-  using ArrTrDer = std::array<FwdTrackDeriv, N>;    // container of Track 1st and 2nd derivative over their Z param
-  using ArrTrPos = std::array<Vec3D, N>;            // container of Track positions
+  using ArrTrack = std::array<NA6PTrack, N>;     // container for prongs (tracks) at single vertex cand.
+  using ArrTrackCovI = std::array<TrackCovI, N>; // container for inv.cov.matrices at single vertex cand.
+  using ArrTrCoef = std::array<MatStd3D, N>;     // container of TrackCoefVtx coefficients at single vertex cand.
+  using ArrTrDer = std::array<TrackDeriv, N>;    // container of Track 1st and 2nd derivative over their Z param
+  using ArrTrPos = std::array<Vec3D, N>;         // container of Track positions
 
  public:
+  enum BadCovPolicy : uint8_t { // if encountering non-positive defined cov. matrix, the choice is:
+    Discard = 0,                // stop evaluation
+    Override = 1,               // override correlation coef. to have cov.matrix pos.def and continue
+    OverrideAndFlag = 2         // override correlation coef. to have cov.matrix pos.def, set mPropFailed flag of corresponding candidate to true and continue (up to the user to check the flag)
+  };
+
   enum FitStatus : uint8_t { // fit status of crossing hypothesis
     None,                    // no status set (should not be possible!)
 
@@ -98,12 +104,6 @@ class NA6PDCAFitterN
     FailCloserAlt,   // alternative PCA is closer
     //
     NStatusesDefined
-  };
-
-  enum BadCovPolicy : uint8_t { // if encountering non-positive defined cov. matrix, the choice is:
-    Discard = 0,                // stop evaluation
-    Override = 1,               // override correlation coef. to have cov.matrix pos.def and continue
-    OverrideAndFlag = 2         // override correlation coef. to have cov.matrix pos.def, set mPropFailed flag of corresponding candidate to true and continue (up to the user to check the flag)
   };
 
   static constexpr int getNProngs() { return N; }
@@ -157,8 +157,22 @@ class NA6PDCAFitterN
     return mCandTr[mOrder[cand]][i];
   }
 
+  ///< create parent track param with errors for decay vertex
+  NA6PTrack createParentTrackParCov(int cand = 0) const; // TODO: update to use NA6PTRackParCov
+
+  ///< create parent track param w/o errors for decay vertex
+  NA6PTrack createParentTrackPar(int cand = 0) const;
+
   ///< recalculate PCA as a cov-matrix weighted mean, even if absDCA method was used
   bool recalculatePCAWithErrors(int cand = 0);
+
+  MatSym3D calcPCACovMatrix(int cand = 0) const;
+
+  std::array<float, 6> calcPCACovMatrixFlat(int cand = 0) const
+  {
+    auto m = calcPCACovMatrix(cand);
+    return {static_cast<float>(m(0, 0)), static_cast<float>(m(1, 0)), static_cast<float>(m(1, 1)), static_cast<float>(m(2, 0)), static_cast<float>(m(2, 1)), static_cast<float>(m(2, 2))};
+  }
 
   const NA6PTrack* getOrigTrackPtr(int i) const { return mOrigTrPtr[i]; }
 
@@ -637,6 +651,30 @@ void NA6PDCAFitterN<N, Args...>::calcPCANoErr()
 
 //___________________________________________________________________
 template <int N, typename... Args>
+ROOT::Math::SMatrix<double, 3, 3, ROOT::Math::MatRepSym<double, 3>> NA6PDCAFitterN<N, Args...>::calcPCACovMatrix(int cand) const
+{
+  // calculate covariance matrix for the point of closest approach
+  MatSym3D covmSum;
+  for (int i = N; i--;) {
+    const auto& tcov = mTrcEInv[mCurHyp][i];
+    covmSum(0, 0) += tcov.sxx;
+    covmSum(1, 0) += tcov.sxy;
+    covmSum(1, 1) += tcov.syy;
+    covmSum(2, 2) += tcov.szz;
+  }
+  if (covmSum.Invert()) {
+    return covmSum;
+  }
+  // fall back on identity diagonal matrix with 1 cm error
+  covmSum(0, 0) = 1.;
+  covmSum(1, 0) = 0.;
+  covmSum(1, 1) = 1.;
+  covmSum(2, 2) = 1.;
+  return covmSum;
+}
+
+//___________________________________________________________________
+template <int N, typename... Args>
 void NA6PDCAFitterN<N, Args...>::calcTrackResiduals()
 {
   // calculate residuals in the global frame
@@ -910,6 +948,64 @@ bool NA6PDCAFitterN<N, Args...>::closerToAlternative() const
   auto dxCur = mPCA[mCurHyp][0] - mCrossings.xDCA[mCrossIDCur], dzCur = mPCA[mCurHyp][2] - mCrossings.zDCA[mCrossIDCur];
   auto dxAlt = mPCA[mCurHyp][0] - mCrossings.xDCA[mCrossIDAlt], dzAlt = mPCA[mCurHyp][2] - mCrossings.zDCA[mCrossIDAlt];
   return dxCur * dxCur + dzCur * dzCur > dxAlt * dxAlt + dzAlt * dzAlt;
+}
+
+//___________________________________________________________________
+template <int N, typename... Args>
+NA6PTrack NA6PDCAFitterN<N, Args...>::createParentTrackParCov(int cand) const
+{
+  std::array<float, 21> covV = {0.};
+  std::array<float, 3> pvecV = {0.};
+  int q = 0;
+  for (int it = 0; it < N; it++) {
+    const auto& trc = getTrack(it, cand);
+    auto pvecT = trc.getPXYZ();
+    std::array<float, 21> covT = {0.};
+    covT[0] = trc.getSigmaX2(); // TODO: update with new parameterization!
+    covT[1] = trc.getSigmaXY();
+    covT[2] = trc.getSigmaY2();
+    covT[9] = trc.getSigmaPX2();
+    covT[14] = trc.getSigmaPY2();
+    covT[20] = trc.getSigmaPZ2();
+    constexpr int MomInd[6] = {9, 13, 14, 18, 19, 20}; // cov matrix elements for momentum component
+    for (int i = 0; i < 6; i++) {
+      covV[MomInd[i]] += covT[MomInd[i]];
+    }
+    for (int i = 0; i < 3; i++) {
+      pvecV[i] += pvecT[i];
+    }
+    q += trc.getCharge();
+  }
+  auto covVtxV = calcPCACovMatrix(cand);
+  covV[0] = covVtxV(0, 0);
+  covV[1] = covVtxV(1, 0);
+  covV[2] = covVtxV(1, 1);
+  covV[3] = covVtxV(2, 0);
+  covV[4] = covVtxV(2, 1);
+  covV[5] = covVtxV(2, 2);
+  NA6PTrack tr; // TODO: update adding covariance matrix
+  tr.init(getPCACandidatePos(cand), pvecV, q);
+  return tr;
+}
+//___________________________________________________________________
+template <int N, typename... Args>
+NA6PTrack NA6PDCAFitterN<N, Args...>::createParentTrackPar(int cand) const
+{
+  const auto& wvtx = getPCACandidate(cand);
+  std::array<float, 3> pvecV = {0.};
+  int q = 0;
+  for (int it = 0; it < N; it++) {
+    const auto& trc = getTrack(it, cand);
+    auto pvecT = trc.getPXYZ();
+    for (int i = 0; i < 3; i++) {
+      pvecV[i] += pvecT[i];
+    }
+    q += trc.getCharge();
+  }
+  const std::array<float, 3> vertex = {(float)wvtx[0], (float)wvtx[1], (float)wvtx[2]};
+  NA6PTrack tr;
+  tr.init(vertex, pvecV, q);
+  return tr;
 }
 
 using NA6PDCAFitter2 = NA6PDCAFitterN<2, NA6PTrack>;

@@ -46,6 +46,13 @@ class NA6PTrack
   virtual ~NA6PTrack() {}
 
   bool init(const double* xyz, const double* pxyz, int sign, double errLoose = -1);
+  bool init(const std::array<float, 3> xyz, const std::array<float, 3> pxyz, int sign, double errLoose = -1)
+  {
+    double xyzd[3] = {xyz[0], xyz[1], xyz[2]};
+    double pxyzd[3] = {pxyz[0], pxyz[1], pxyz[2]};
+    return init(xyzd, pxyzd, sign, errLoose);
+  }
+
   void imposeKinematics(const double* xyzLab, const double* cosinesLab, double en, double mass, int charge);
   void reset();
   void resetCovariance(float err = -1.);

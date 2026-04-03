@@ -236,8 +236,8 @@ class NA6PDCAFitterN
   bool minimizeChi2NoErr();
   bool roughDZCut() const;
   bool closerToAlternative() const;
-  bool propagateToZ(NA6PTrack& t, float z) { return true; }      // TODO
-  bool propagateParamToZ(NA6PTrack& t, float z) { return true; } // TODO
+  bool propagateToZ(NA6PTrack& t, float z) const;
+  bool propagateParamToZ(NA6PTrack& t, float z) const;
 
   static double getAbsMax(const VecND& v);
   ///< track param positions at V0 candidate (no check for the candidate validity)
@@ -1006,6 +1006,18 @@ NA6PTrack NA6PDCAFitterN<N, Args...>::createParentTrackPar(int cand) const
   NA6PTrack tr;
   tr.init(vertex, pvecV, q);
   return tr;
+}
+//___________________________________________________________________
+template <int N, typename... Args>
+inline bool NA6PDCAFitterN<N, Args...>::propagateParamToZ(NA6PTrack& t, float z) const
+{
+  return t.propagateParamToZ(z, mBy);
+}
+//___________________________________________________________________
+template <int N, typename... Args>
+inline bool NA6PDCAFitterN<N, Args...>::propagateToZ(NA6PTrack& t, float z) const
+{
+  return t.propagateToZ(z, mBy);
 }
 
 using NA6PDCAFitter2 = NA6PDCAFitterN<2, NA6PTrack>;

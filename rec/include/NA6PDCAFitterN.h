@@ -243,6 +243,8 @@ class NA6PDCAFitterN
   ///< track param positions at V0 candidate (no check for the candidate validity)
   const Vec3D& getTrackPos(int i, int cand = 0) const { return mTrPos[mOrder[cand]][i]; }
 
+  void assign(int) {}
+
   template <class T, class... Tr>
   void assign(int i, const T& t, const Tr&... args)
   {

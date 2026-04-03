@@ -1,6 +1,8 @@
 #ifndef _NA6P_HELIX_HELPER_
 #define _NA6P_HELIX_HELPER_
 
+#include "NA6PLine.h"
+
 struct CircleXZ {
 
     float xC, zC, rC;   // centre and radius of helix projection in XZ bending plane

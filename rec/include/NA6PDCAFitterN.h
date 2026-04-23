@@ -657,8 +657,9 @@ ROOT::Math::SMatrix<double, 3, 3, ROOT::Math::MatRepSym<double, 3>> NA6PDCAFitte
 {
   // calculate covariance matrix for the point of closest approach
   MatSym3D covmSum;
+  int ord = mOrder[cand];
   for (int i = N; i--;) {
-    const auto& tcov = mTrcEInv[mCurHyp][i];
+    const auto& tcov = mTrcEInv[ord][i];
     covmSum(0, 0) += tcov.sxx;
     covmSum(1, 0) += tcov.sxy;
     covmSum(1, 1) += tcov.syy;

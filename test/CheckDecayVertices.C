@@ -12,6 +12,7 @@
 #include "NA6PMCEventHeader.h"
 #include "NA6PDCAFitterN.h"
 #include "MagneticField.h"
+#include "ConfigurableParam.h"
 #endif
 
 void FillMeanAndRms(TH2F* h2D, TH1F* hMean, TH1F* hRms, TH1F* hSig)
@@ -169,6 +170,12 @@ bool CheckCharmDecay(TParticle& mothPart,
 void CheckDecayVertices(const char* part = "D0",
                         const char* dirSimu = ".")
 {
+  na6p::conf::ConfigurableParam::updateFromFile(Form("%s/na6pLayout.ini",dirSimu), "", true);
+  if (TGeoGlobalMagField::Instance()->GetField() == nullptr) {
+    auto magField = new MagneticField();
+    magField->loadField();
+    magField->setAsGlobalField();
+  }
 
   int pdgPart = 421;
   int nProngs = 2;
@@ -333,7 +340,6 @@ void CheckDecayVertices(const char* part = "D0",
 
       std::vector<NA6PTrack> prongs;
       int nRecoDau = 0;
-      float sumPx = 0., sumPy = 0., sumPz = 0., sumE = 0.;
       for (int kd = 0; kd < nProngs; ++kd) {
         for (int jTr = 0; jTr < nTracks; ++jTr) {
           NA6PTrack tr = trArr->at(jTr);
@@ -344,16 +350,6 @@ void CheckDecayVertices(const char* part = "D0",
           if (mcLabel == idDau[kd]) {
             prongs.push_back(tr);
             ++nRecoDau;
-            double pxyz[3];
-            tr.getPXYZ(pxyz);
-            sumPx += pxyz[0];
-            sumPy += pxyz[1];
-            sumPz += pxyz[2];
-            float mom = tr.getP();
-            auto mcPart = mcArr->at(mcLabel);
-            float mass = mcPart.GetMass();
-            float energy = std::sqrt(mass * mass + mom * mom);
-            sumE += energy;
           }
         }
       }
@@ -362,8 +358,6 @@ void CheckDecayVertices(const char* part = "D0",
       ++nReconstructed;
       hRecoVsRap->Fill(geny);
       hRecoVsPt->Fill(genpt);
-      float mom2 = sumPx * sumPx + sumPy * sumPy + sumPz * sumPz;
-      float invMass = std::sqrt(sumE * sumE - mom2);
       int n = 0;
       if (nProngs == 2) {
         n = df2.process(prongs[0], prongs[1]);
@@ -376,6 +370,22 @@ void CheckDecayVertices(const char* part = "D0",
       float dvx = (secondaryVertex[0] - decvert[0]) * 1e4;
       float dvy = (secondaryVertex[1] - decvert[1]) * 1e4;
       float dvz = (secondaryVertex[2] - decvert[2]) * 1e4;
+
+      float sumPx = 0., sumPy = 0., sumPz = 0., sumE = 0.;
+      for (int kd = 0; kd < nProngs; ++kd) {
+        double pxyz[3];
+        prongs[kd].getPXYZ(pxyz);
+        sumPx += pxyz[0];
+        sumPy += pxyz[1];
+        sumPz += pxyz[2];
+        float mom = prongs[kd].getP();
+        auto mcPart = mcArr->at(prongs[kd].getParticleID());
+        float mass = mcPart.GetMass();
+        float energy = std::sqrt(mass * mass + mom * mom);
+        sumE += energy;
+      }
+      float mom2 = sumPx * sumPx + sumPy * sumPy + sumPz * sumPz;
+      float invMass = std::sqrt(sumE * sumE - mom2);
 
       hInvMass->Fill(invMass);
       hInvMassVsRap->Fill(geny, invMass);

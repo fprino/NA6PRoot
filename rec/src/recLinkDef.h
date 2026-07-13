@@ -33,6 +33,7 @@
 #pragma link C++ class NA6PReconstruction + ;
 #pragma link C++ class NA6PVerTelReconstruction + ;
 #pragma link C++ class NA6PMuonSpecReconstruction + ;
+#pragma link C++ class NA6PVerTelClusterizer + ;
 #pragma link C++ class NA6PMatching + ;
 #pragma link C++ class NA6PVertexerTracklets + ;
 #pragma link C++ class NA6PVertexerTracks + ;

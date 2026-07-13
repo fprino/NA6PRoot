@@ -86,7 +86,7 @@ bool NA6PVerTelSegmentation::localToIndices(float xloc, float yloc, UShort_t& rs
   xloc -= DeadXShort;
 
   bool isOk = computePixelIndices(xloc, yloc, DeadYBottom, DeadYTop, rsu, tile, row, col);
-  if (!isOk || col >= NColsPerTile || row >= NRowsPerTile) {
+  if (!isOk || col >= NColsPerTile || row >= NRowsPerTile || rsu >= NYSensors * (NXSegments / NSegmentsPerRSU) || tile >= NTilesPerRSU) {
     return false;
   }
   return true;

@@ -22,6 +22,7 @@
 // Class to steer the VT reconstruction
 
 #include "NA6PVerTelCluster.h"
+#include "NA6PVerTelClusterizer.h"
 #include "NA6PTrack.h"
 #include "NA6PVertex.h"
 #include "NA6PReconstruction.h"
@@ -29,6 +30,7 @@
 class TFile;
 class TTree;
 class NA6PVerTelHit;
+class NA6PVerTelDigit;
 class NA6PVertexerTracklets;
 class NA6PTrackerCA;
 
@@ -43,13 +45,19 @@ class NA6PVerTelReconstruction : public NA6PReconstruction
   bool initTracker();
   // methods to steer cluster reconstruction
   void createClustersOutput() override;
-  void clearClusters() override { mClusters.clear(); }
+  void clearClusters() override
+  {
+    mClusters.clear();
+    mCluMCLabels.clear_andfreememory();
+  }
   void writeClusters() override;
   void closeClustersOutput() override;
   // fast method to smear the hits bypassing digitization and cluster finder
   void setClusterSpaceResolution(double clures) { mCluRes = clures; }
   void setEmulateNoGaps(bool val = true) { mEmulateNoGaps = val; }
   void hitsToRecPoints(const std::vector<NA6PVerTelHit>& hits);
+  void digitsToRecPoints(const std::vector<NA6PVerTelDigit>& vtDigits, const NA6PMCTruthContainer& digMCLabels);
+
   NA6PTrackerCA* getTracker() const { return mVTTracker.get(); }
 
   // methods to steer tracking
@@ -68,19 +76,21 @@ class NA6PVerTelReconstruction : public NA6PReconstruction
   void runTracking();
 
  private:
-  std::vector<NA6PVerTelCluster> mClusters, *hClusPtr = &mClusters; // vector of clusters
-  TFile* mClusFile = nullptr;                                       // file with clusters
-  TTree* mClusTree = nullptr;                                       // tree of clusters
-  double mCluRes = 5.e-4;                                           // cluster resolution, cm (for fast simu)
-  bool mEmulateNoGaps = false;                                      // enable sensor acceptance overlaps in hitsToRecPoints
-  std::vector<NA6PVertex> mVertices, *hVerticesPtr = &mVertices;    // vector of vertices
-  TFile* mVertexFile = nullptr;                                     // file with vertices
-  TTree* mVertexTree = nullptr;                                     // tree of vertices
-  std::vector<NA6PTrack> mTracks, *hTrackPtr = &mTracks;            // vector of tracks
-  TFile* mTrackFile = nullptr;                                      // file with tracks
-  TTree* mTrackTree = nullptr;                                      // tree of tracks
-  std::unique_ptr<NA6PVertexerTracklets> mVTTrackletVertexer;       // vertexer
-  std::unique_ptr<NA6PTrackerCA> mVTTracker;                        // tracker
+  std::vector<NA6PVerTelCluster> mClusters, *hClusPtr = &mClusters;    // vector of clusters
+  NA6PMCTruthContainer mCluMCLabels, *hCluMCLabelsPtr = &mCluMCLabels; // MC labels
+  NA6PVerTelClusterizer mClusterizer;                                  // cluster finder
+  TFile* mClusFile = nullptr;                                          // file with clusters
+  TTree* mClusTree = nullptr;                                          // tree of clusters
+  double mCluRes = 5.e-4;                                              // cluster resolution, cm (for fast simu)
+  bool mEmulateNoGaps = false;                                         // enable sensor acceptance overlaps in hitsToRecPoints
+  std::vector<NA6PVertex> mVertices, *hVerticesPtr = &mVertices;       // vector of vertices
+  TFile* mVertexFile = nullptr;                                        // file with vertices
+  TTree* mVertexTree = nullptr;                                        // tree of vertices
+  std::vector<NA6PTrack> mTracks, *hTrackPtr = &mTracks;               // vector of tracks
+  TFile* mTrackFile = nullptr;                                         // file with tracks
+  TTree* mTrackTree = nullptr;                                         // tree of tracks
+  std::unique_ptr<NA6PVertexerTracklets> mVTTrackletVertexer;          // vertexer
+  std::unique_ptr<NA6PTrackerCA> mVTTracker;                           // tracker
 
   ClassDefNV(NA6PVerTelReconstruction, 1);
 };

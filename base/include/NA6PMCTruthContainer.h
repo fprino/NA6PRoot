@@ -17,6 +17,7 @@
 
 #include "NA6PMCComposedLabel.h"
 #include <span>
+#include <stdexcept>
 
 class NA6PMCTruthContainer
 {

@@ -25,6 +25,7 @@ set(DICTIONARY_HEADERS
   NA6PBaseCluster.h
   NA6PMuonSpecCluster.h
   NA6PVerTelCluster.h
+  NA6PVerTelClusterizer.h
   NA6PTrackPar.h
   NA6PTrackParCov.h
   NA6PTrack.h

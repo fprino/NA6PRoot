@@ -268,8 +268,14 @@ bool NA6PVerTelClusterizer::pixelsToRecPoint()
   mClustersPtr->emplace_back(xyzGloClu[0], xyzGloClu[1], xyzGloClu[2], clusiz, layer);
   auto& clu = mClustersPtr->back();
   clu.setDetectorID(refMod);
-  // TODO: add calculation of errors on cluster coordinates
-
+  // Very preliminary definition of cluster uncertainties
+  // -> use pitch / sqrt(12) independently of cluster shape / size
+  //    to avoid penalizing large clusters
+  //    better tuning as a function of cluster shape should be done based
+  //    on MOSAIX characterization measurements
+  float sigX = pitchX / std::sqrt(12);
+  float sigY = pitchY / std::sqrt(12);
+  clu.setErr(sigX * sigX, 0., sigY * sigY);
   // add MC labels
   int nCluLabels = 0;
   for (const auto& pix : mPixArrBuff) {

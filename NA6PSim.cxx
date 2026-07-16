@@ -7,9 +7,13 @@
 #include <TGeoGlobalMagField.h>
 #include <boost/program_options.hpp>
 #include <filesystem>
+#include <TTree.h>
+#include <TFile.h>
 #include "MagneticField.h"
 #include "StringUtils.h"
 #include "NA6PMC.h"
+#include "NA6PVerTelHit.h"
+#include "NA6PVerTelDigitizer.h"
 #include "TG4RunConfiguration.h"
 #include "TGeant4.h"
 
@@ -38,9 +42,9 @@ int main(int argc, char** argv)
     add_option("user-vertex,V", bpo::value<std::string>()->default_value(""), "root macro C macro with user method for vertex generation");
     add_option("rnd-seed,r", bpo::value<int64_t>()->default_value(-1), "random number seed, 0 - do not set, <0: generate from time");
     add_option("save-bfield,b", bpo::value<bool>()->default_value(false)->implicit_value(true), "Save magnetic field to file");
+    add_option("doDigitization,dig", bpo::value<bool>()->default_value(true), "run hits->digits");
     opt_all.add(opt_general).add(opt_hidden);
     bpo::store(bpo::command_line_parser(argc, argv).options(opt_all).positional(opt_pos).run(), vm);
-
     if (vm.count("help")) {
       std::cout << opt_general << std::endl;
       exit(0);
@@ -77,7 +81,7 @@ int main(int argc, char** argv)
   auto magField = new MagneticField();
   magField->loadField();
   magField->setAsGlobalField();
-  if (vm["save-bfield"].as<bool>()){
+  if (vm["save-bfield"].as<bool>()) {
     LOGP(info, "Dumping the magnetic field map");
     magField->dumpMagFieldFromConfig();
   }
@@ -123,5 +127,34 @@ int main(int argc, char** argv)
   //  ~/aliroot/sw/SOURCES/GEANT4_VMC/v5-3/v5-3/examples/Gflash
   delete geant4;
   delete mc;
+
+  const bool doHitsToDigits = vm["doDigitization"].as<bool>();
+  if (doHitsToDigits) {
+    LOGP(info, "Run hits -> digits");
+    NA6PVerTelDigitizer dig;
+    dig.init("geometry.root");
+    TFile* fhVT = TFile::Open("HitsVerTel.root");
+    if (!fhVT || fhVT->IsZombie()) {
+      LOGP(fatal, "Failed to open file HitsVerTel.root");
+    }
+    TTree* thVT = (TTree*)fhVT->Get("hitsVerTel");
+    if (!thVT) {
+      LOGP(fatal, "Failed to get tree hitsVerTel from file HitsVerTel.root");
+    }
+    std::vector<NA6PVerTelHit> vtHits, *vtHitsPtr = &vtHits;
+    thVT->SetBranchAddress("VerTel", &vtHitsPtr);
+    int nEvVT = thVT->GetEntriesFast();
+    for (int jEv = 0; jEv < nEvVT; jEv++) {
+      thVT->GetEvent(jEv);
+      int nHits = vtHits.size();
+      LOGP(info, "Digitize VerTel Event {} nHits = {}", jEv, nHits);
+      dig.process(vtHits);
+    }
+    dig.closeDigitsOutput();
+    delete thVT;
+    fhVT->Close();
+    delete fhVT;
+  }
+
   return 0;
 }

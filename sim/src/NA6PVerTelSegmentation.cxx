@@ -1,6 +1,28 @@
 // NA6PCCopyright
 
 #include "NA6PVerTelSegmentation.h"
+#include "NA6PGeometryManager.h"
+#include "NA6PLayoutParam.h"
+
+NA6PVerTelSegmentation::NA6PVerTelSegmentation()
+{
+  const auto& layout = NA6PLayoutParam::Instance();
+  mOffsXFront = layout.pixChipOffsXFront;
+  mOffsXBack = layout.pixChipOffsXBack;
+  mOffsX = mOffsXFront;
+  mOffsY = -layout.pixChipOffsY;
+}
+
+void NA6PVerTelSegmentation::setDetectorID(int detID)
+{
+  mOffsX = isBackChip(detID) ? mOffsXBack : mOffsXFront;
+}
+
+bool NA6PVerTelSegmentation::isBackChip(int detID)
+{
+  const int chipInPlane = detID % NA6PGeometryManager::kNVTModulesPerLayer;
+  return chipInPlane == 0 || chipInPlane == 2;
+}
 
 void NA6PVerTelSegmentation::setStaggered(bool val)
 {

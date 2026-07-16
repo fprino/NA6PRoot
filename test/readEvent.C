@@ -7,10 +7,14 @@ void readEvent(
     const char* fileNameTracksMuonSpec = "TracksMuonSpec.root",
     const char* fileNameTracksMatching = "TracksMatching.root",
     const char* fileNameMC             = "MCKine.root",
-    bool readMC                        = true
+    bool readVerTel         = true,
+    bool readTracksVerTel   = true,
+    bool readTracksMuonSpec = true,
+    bool readTracksMatching = true,
+    bool readMC             = true
 )
 {
-  NA6PEventReader reader(fileNameVerTel, fileNameTracksVerTel, fileNameTracksMuonSpec, fileNameTracksMatching, fileNameMC, readMC);
+  NA6PEventReader reader(fileNameVerTel, fileNameTracksVerTel, fileNameTracksMuonSpec, fileNameTracksMatching, fileNameMC, readVerTel, readTracksVerTel, readTracksMuonSpec, readTracksMatching, readMC);
 
   for (std::int64_t iev = 0; iev < reader.entries(); ++iev) {
     reader.loadEvent(iev);
@@ -20,7 +24,8 @@ void readEvent(
     const auto& msTracks = reader.tracksMuonSpec();
     const auto& matches  = reader.matches();
     const auto& mcParts  = reader.mcParticles();
+    const auto& mcHeader = reader.mcHeader();
 
-    std::cout << "event " << iev << " nVtx=" << vertices.size() << " nVT=" << vtTracks.size() << " nMS=" << msTracks.size() << " nMatch=" << matches.size() << " nMC=" << mcParts.size() << std::endl;
+    std::cout << "event " << iev << " nVtx=" << vertices.size() << " nVT=" << vtTracks.size() << " nMS=" << msTracks.size() << " nMatch=" << matches.size() << " nMC=" << mcParts.size() << " mcVZ=" << mcHeader->getVZ() << std::endl;
   }
 }

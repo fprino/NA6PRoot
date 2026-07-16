@@ -16,6 +16,8 @@ include_directories(${HEPMC3_INCLUDE_DIR})
 
 file(GLOB THIS_SOURCES ${THIS_SRC_DIR}/*.cxx)
 file(GLOB THIS_HEADERS ${THIS_INCLUDE_DIR}/*.h)
+list(APPEND THIS_SOURCES ${THIS_SRC_DIR}/NA6PCoolingPlate.cxx)
+list(REMOVE_DUPLICATES THIS_SOURCES)
 
 # Add the library
 add_library(${LIB_NAME} SHARED ${THIS_SOURCES} ${THIS_HEADERS} )

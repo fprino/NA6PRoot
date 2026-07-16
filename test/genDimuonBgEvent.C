@@ -23,7 +23,7 @@ bool getParams(float& T_piM, float& y0_piM, float& ysig_piM, float& dNdY_piM,
   // Background parametrization is available only for 40 and 150 Gev and it can be switched on/off through the argument Bg
 
   if (std::abs(en - 40.) < 3) {
-    LOGP(info, "Setting hadronic event parameters for PbPb at 40. GeV/c");
+    LOGP(info, "Setting hadronic event parameters for PbPb at 40 GeV/c");
     // pions and Kaons from  NA49 nucl-ex/0205002
     T_piM = T_piP = 0.169;
     T_KM = 0.232;
@@ -47,7 +47,7 @@ bool getParams(float& T_piM, float& y0_piM, float& ysig_piM, float& dNdY_piM,
     dNdY_Prot = 39.9;
 
     // JPsi
-    LOGP(info, "Setting Jpsi parameters for PbPb at 40. GeV/c");
+    LOGP(info, "Setting Jpsi parameters for PbPb at 40 GeV/c");
     yboxhalfw_Jpsi = 0.3549; // half width of the box
     ysig_Jpsi = 0.1538;      // Gaussian sigma
     pt1_Jpsi = 41.53;
@@ -55,7 +55,7 @@ bool getParams(float& T_piM, float& y0_piM, float& ysig_piM, float& dNdY_piM,
     pt3_Jpsi = 1640;
 
     // omega2body and Phi
-    LOGP(info, "Setting Omega2Body and Phi parameters for PbPb at 40. GeV/c");
+    LOGP(info, "Setting Omega2Body and Phi parameters for PbPb at 40 GeV/c");
     sigySG = 1;
     TSG_Phi = 0.25;   // inv.slope of thermal pt distribution
     TSG_Omega = 0.25; // inv.slope of thermal pt distribution
@@ -63,10 +63,10 @@ bool getParams(float& T_piM, float& y0_piM, float& ysig_piM, float& dNdY_piM,
     MotherMass_Omega = 0.781; // omega2body
 
   } else if (std::abs(en - 50.) < 3) {
-    LOGP(info, "Setting hadronic event parameters for PbPb at 50. GeV/c");
-    LOGP(info, "No hadronic event parameters for PbPb at 50. GeV/c");
+    LOGP(info, "Setting hadronic event parameters for PbPb at 50 GeV/c");
+    LOGP(info, "No hadronic event parameters for PbPb at 50 GeV/c");
 
-    LOGP(info, "Setting Jpsi parameters for PbPb at 40. GeV/c");
+    LOGP(info, "Setting Jpsi parameters for PbPb at 50. GeV/c");
     yboxhalfw_Jpsi = 0.4038; // half width of the box
     ysig_Jpsi = 0.1849;      // Gaussian sigma
     pt1_Jpsi = 55.08;
@@ -74,10 +74,10 @@ bool getParams(float& T_piM, float& y0_piM, float& ysig_piM, float& dNdY_piM,
     pt3_Jpsi = 1788;
 
   } else if (std::abs(en - 70.) < 3) {
-    LOGP(info, "Setting hadronic event parameters for PbPb at 70. GeV/c");
-    LOGP(info, "No hadronic event parameters for PbPb at 70. GeV/c");
+    LOGP(info, "Setting hadronic event parameters for PbPb at 70 GeV/c");
+    LOGP(info, "No hadronic event parameters for PbPb at 70 GeV/c");
 
-    LOGP(info, "Setting Jpsi parameters for PbPb at 40. GeV/c");
+    LOGP(info, "Setting Jpsi parameters for PbPb at 70 GeV/c");
     yboxhalfw_Jpsi = 0.5524; // half width of the box
     ysig_Jpsi = 0.1875;      // Gaussian sigma
     pt1_Jpsi = 49.01;
@@ -85,10 +85,10 @@ bool getParams(float& T_piM, float& y0_piM, float& ysig_piM, float& dNdY_piM,
     pt3_Jpsi = 892.6;
 
   } else if (std::abs(en - 90.) < 3) {
-    LOGP(info, "Setting hadronic event parameters for PbPb at 90. GeV/c");
-    LOGP(info, "No hadronic event parameters for PbPb at 90. GeV/c");
+    LOGP(info, "Setting hadronic event parameters for PbPb at 90 GeV/c");
+    LOGP(info, "No hadronic event parameters for PbPb at 90 GeV/c");
 
-    LOGP(info, "Setting Jpsi parameters for PbPb at 40. GeV/c");
+    LOGP(info, "Setting Jpsi parameters for PbPb at 90 GeV/c");
     yboxhalfw_Jpsi = 0.6739; // half width of the box
     ysig_Jpsi = 0.1905;      // Gaussian sigma
     pt1_Jpsi = 53.48;
@@ -96,10 +96,10 @@ bool getParams(float& T_piM, float& y0_piM, float& ysig_piM, float& dNdY_piM,
     pt3_Jpsi = 895.5;
 
   } else if (std::abs(en - 110.) < 3) {
-    LOGP(info, "Setting hadronic event parameters for PbPb at 110. GeV/c");
-    LOGP(info, "No hadronic event parameters for PbPb at 110. GeV/c");
+    LOGP(info, "Setting hadronic event parameters for PbPb at 110 GeV/c");
+    LOGP(info, "No hadronic event parameters for PbPb at 110 GeV/c");
 
-    LOGP(info, "Setting Jpsi parameters for PbPb at 40. GeV/c");
+    LOGP(info, "Setting Jpsi parameters for PbPb at 110 GeV/c");
     yboxhalfw_Jpsi = 0.7719; // half width of the box
     ysig_Jpsi = 0.193;       // Gaussian sigma
     pt1_Jpsi = 17.27;
@@ -107,10 +107,10 @@ bool getParams(float& T_piM, float& y0_piM, float& ysig_piM, float& dNdY_piM,
     pt3_Jpsi = 125.5;
 
   } else if (std::abs(en - 130.) < 3) {
-    LOGP(info, "Setting hadronic event parameters for PbPb at 130. GeV/c");
-    LOGP(info, "No hadronic event parameters for PbPb at 130. GeV/c");
+    LOGP(info, "Setting hadronic event parameters for PbPb at 130 GeV/c");
+    LOGP(info, "No hadronic event parameters for PbPb at 130 GeV/c");
 
-    LOGP(info, "Setting Jpsi parameters for PbPb at 40. GeV/c");
+    LOGP(info, "Setting Jpsi parameters for PbPb at 130. GeV/c");
     yboxhalfw_Jpsi = 0.8525; // half width of the box
     ysig_Jpsi = 0.1917;      // Gaussian sigma
     pt1_Jpsi = 37.55;
@@ -118,7 +118,7 @@ bool getParams(float& T_piM, float& y0_piM, float& ysig_piM, float& dNdY_piM,
     pt3_Jpsi = 460.8;
 
   } else if (std::abs(en - 158.) < 3) {
-    LOGP(info, "Setting hadronic event parameters for PbPb at 158. GeV/c");
+    LOGP(info, "Setting hadronic event parameters for PbPb at 158 GeV/c");
 
     T_piM = T_piP = 0.18;
     T_KM = 0.226;
@@ -142,7 +142,7 @@ bool getParams(float& T_piM, float& y0_piM, float& ysig_piM, float& dNdY_piM,
     dNdY_Prot = 27.;
 
     // Jpsi
-    LOGP(info, "Setting Jpsi parameters for PbPb at 40. GeV/c");
+    LOGP(info, "Setting Jpsi parameters for PbPb at 158 GeV/c");
     yboxhalfw_Jpsi = 0.9248; // half width of the box
     ysig_Jpsi = 0.1895;      // Gaussian sigma
     pt1_Jpsi = 14.45;
@@ -150,8 +150,8 @@ bool getParams(float& T_piM, float& y0_piM, float& ysig_piM, float& dNdY_piM,
     pt3_Jpsi = 87.2;
 
     // omega2body and Phi
-    LOGP(info, "Setting Omega2Body and Phi parameters for PbPb at 40. GeV/c");
-    sigySG = 1;
+    LOGP(info, "Setting Omega2Body and Phi parameters for PbPb at 158 GeV/c");
+    sigySG = 1.2;
     TSG_Phi = 0.30;   // inv.slope of thermal pt distribution
     TSG_Omega = 0.29; // inv.slope of thermal pt distribution
     MotherMass_Phi = 1.02;

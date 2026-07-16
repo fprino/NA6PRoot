@@ -124,6 +124,7 @@ class NA6PTrackPar
   float getPz() const { return getPxz() * getCosPsi(); } // pz = pxz*cos(psi)
   float getPx() const { return getPxz() * getTx(); }     // px = pxz*sin(psi)
   float getPy() const { return getPxz() * getTy(); }     // py = pxz*ty
+  float getPt() const { return std::hypot(getPx(), getPy()); } // pt = sqrt(px*px + py*py)
   float getQ2P() const;
   float getCharge2Pxz() const { return getQ2Pxz(); } // RSTODO in case of q=0 return 0, while  getQ2Pxz() returns 1/p_xz
 

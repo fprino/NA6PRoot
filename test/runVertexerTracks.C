@@ -5,7 +5,7 @@
 #include <TH2F.h>
 #include <TCanvas.h>
 #include <TParticle.h>
-#include "MagneticField.h"
+#include "Propagator.h"
 #include "NA6PVertex.h"
 #include "NA6PVertexerTracks.h"
 #include "NA6PMCEventHeader.h"
@@ -13,9 +13,9 @@
 
 void runVertexerTracks(const char* dirSimu = ".")
 {
-  auto magField = new MagneticField();
-  magField->loadField();
-  magField->setAsGlobalField();
+  if (!Propagator::loadField() || !Propagator::loadGeometry(Form("%s/geometry.root", dirSimu))) {
+    return;
+  }
 
   TFile* ft = new TFile(Form("%s/TracksVerTel.root", dirSimu));
   if (!ft)
@@ -33,12 +33,12 @@ void runVertexerTracks(const char* dirSimu = ".")
 
   TH1F* hncontr = new TH1F("hncontr", ";N_{contributors}", 100, -0.5, 999.5);
   TH1F* hnvert = new TH1F("hnvert", ";Number of reco vertices", 11, -0.5, 10.5);
-  TH2F* hxrecgen = new TH2F("hxrecgen", ";x_{gen} (cm);x_{rec} (cm)", 100, -0.05, 0.05, 100, -0.05, 0.05);
-  TH2F* hyrecgen = new TH2F("hyrecgen", ";y_{gen} (cm);y_{rec} (cm)", 100, -0.05, 0.05, 100, -0.05, 0.05);
-  TH2F* hzrecgen = new TH2F("hzrecgen", ";z_{gen} (cm);z_{rec} (cm)", 100, -4., 4., 100, -4., 4.);
+  TH2F* hxrecgen = new TH2F("hxrecgen", ";x_{gen} (cm);x_{rec} (cm)", 1000, -0.5, 0.5, 1000, -0.5, 0.5);
+  TH2F* hyrecgen = new TH2F("hyrecgen", ";y_{gen} (cm);y_{rec} (cm)", 1000, -0.5, 0.5, 1000, -0.5, 0.5);
+  TH2F* hzrecgen = new TH2F("hzrecgen", ";z_{gen} (cm);z_{rec} (cm)", 100, -6., 1., 100, -6., 1.);
   TH1F* hxrec = new TH1F("hxrec", ";x_{rec,main} (cm)", 100, -0.1, 0.1);
   TH1F* hyrec = new TH1F("hyrec", ";y_{rec,main} (cm)", 100, -0.1, 0.1);
-  TH1F* hzrec = new TH1F("hzrec", ";z_{rec,main} (cm)", 200, -4., 4.);
+  TH1F* hzrec = new TH1F("hzrec", ";z_{rec,main} (cm)", 200, -6., 1.);
   TH1F* hdx = new TH1F("hdx", ";x_{rec} - x_{gen} (#mum)", 100, -40., 40.);
   TH1F* hdy = new TH1F("hdy", ";y_{rec} - y_{gen} (#mum)", 100, -40., 40.);
   TH1F* hdz = new TH1F("hdz", ";z_{rec} - z_{gen} (#mum)", 100, -200., 200.);
@@ -145,6 +145,7 @@ void runVertexerTracks(const char* dirSimu = ".")
   hzrec->SetFillColor(kBlue - 9);
   hzrec->SetFillStyle(1001);
   hzrec->Draw();
+  cv->SaveAs(Form("%s/vertexerSummary.png", dirSimu));
 
   TCanvas* cres = new TCanvas("cres", "", 1400, 800);
   cres->Divide(3, 2);
@@ -166,6 +167,7 @@ void runVertexerTracks(const char* dirSimu = ".")
   hdz->SetFillColor(kOrange + 2);
   hdz->SetFillStyle(1001);
   hdz->Draw();
+  cres->SaveAs(Form("%s/vertexerResiduals.png", dirSimu));
 
   TCanvas* cpull = new TCanvas("cpull", "", 1400, 800);
   cpull->Divide(3, 2);
@@ -190,6 +192,7 @@ void runVertexerTracks(const char* dirSimu = ".")
   hpullz->SetFillColor(kTeal - 7);
   hpullz->SetFillStyle(1001);
   hpullz->Draw();
+  cpull->SaveAs(Form("%s/vertexerPulls.png", dirSimu));
 
   TCanvas* cpil = new TCanvas("cz", "", 1200, 800);
   cpil->Divide(2, 2);
@@ -199,4 +202,5 @@ void runVertexerTracks(const char* dirSimu = ".")
   hcontRatio->Draw();
   cpil->cd(3);
   hzdrc->Draw("colz");
+  cpil->SaveAs(Form("%s/vertexerPileup.png", dirSimu));
 }

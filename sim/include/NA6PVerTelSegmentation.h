@@ -50,8 +50,9 @@ class NA6PVerTelSegmentation
   static constexpr int NRowsPerTile = 444;
   static constexpr int NColsPerTile = 156;
 
-  NA6PVerTelSegmentation() = default;
+  NA6PVerTelSegmentation();
 
+  void setDetectorID(int detID);
   void setOffsetX(float val) { mOffsX = val; }
   void setOffsetY(float val) { mOffsY = val; }
   void setInterChipGap(float val) { mInterChipGap = val; }
@@ -70,14 +71,17 @@ class NA6PVerTelSegmentation
   }
 
  private:
+  static bool isBackChip(int detID);
   bool computePixelIndices(float xloc, float yloc,
                            float deadYBottom, float deadYTop,
                            UShort_t& rsu, UShort_t& tile,
                            UShort_t& row, UShort_t& col) const;
 
  protected:
-  float mOffsX = 0.29;
-  float mOffsY = -0.31;
+  float mOffsX = 0.f;
+  float mOffsXFront = 0.f;
+  float mOffsXBack = 0.f;
+  float mOffsY = 0.f;
   float mInterChipGap = 0.02;
   bool mStaggered = false;
   float mDeadXLongEff = DeadXLong;

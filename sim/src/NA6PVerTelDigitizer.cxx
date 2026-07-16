@@ -101,6 +101,7 @@ void NA6PVerTelDigitizer::processHit(const NA6PVerTelHit& hit)
 {
   auto modID = hit.getDetectorID();
   auto& mod = mModules[modID];
+  mSegmentation.setDetectorID(modID);
   if (mod.isDisabled()) {
     LOGP(info, "Skipping disabled module {}", modID);
     return;

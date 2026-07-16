@@ -16,7 +16,6 @@
 #define NA6P_VERTEXER_TRACKS_H
 
 #include <vector>
-#include <NA6PLine.h>
 #include <NA6PTrack.h>
 #include <NA6PVertex.h>
 
@@ -25,74 +24,32 @@ struct TrackVF {
          kNoVtx = -1,
          kDiscarded = kNoVtx - 1 };
 
-  NA6PLine mLine;      // straight line representation of the track
-  float mSig2XI = 0.f; // XX component of inverse cov.matrix
-  float mSig2YI = 0.f; // YY component of inverse cov.matrix
-  float mSig2ZI = 0.f; // ZZ component of inverse cov matrix
-  float mSigXYI = 0.f; // XY component of inverse cov matrix
-  float mSigXZI = 0.f; // XZ component of inverse cov matrix
-  float mSigYZI = 0.f; // YZ component of inverse cov matrix
-  int trackIndex = -1; // track index
-  float wgh = 0.f;     ///< track weight wrt current vertex seed
-  int vtxID = kNoVtx;  // assigned vertex
+  double mSxx[3]{};         ///< coefficients of Sxx(dz) = Sxx[0] + dz*Sxx[1] + dz^2*Sxx[2]
+  double mSxy[3]{};         ///< coefficients of Sxy(dz) = Sxy[0] + dz*Sxy[1] + dz^2*Sxy[2]
+  double mSyy[3]{};         ///< coefficients of Syy(dz) = Syy[0] + dz*Syy[1] + dz^2*Syy[2]
+  double mSlopeX = 0.;      ///< dx/dz = tx/cosPsi
+  double mSlopeY = 0.;      ///< dy/dz = ty/cosPsi
+  float mX = 0.f;           ///< track X at the PCA to the beam line
+  float mY = 0.f;           ///< track Y at the PCA to the beam line
+  float mZ = 0.f;           ///< track Z at the PCA to the beam line
+  float mZSeedWeight = 0.f; ///< inverse variance of the beam-line Z PCA, used only for peak finding
+  int trackIndex = -1;      ///< track index
+  float wgh = 0.f;          ///< track weight wrt current vertex seed
+  int vtxID = kNoVtx;       ///< assigned vertex
 
   TrackVF() = default;
-  TrackVF(const NA6PTrackParCov& src, int id) : mLine(src)
-  {
-    // NB: src must already be propagated to its DCA to the beam axis
-    // before constructing TrackVF — call propagateToDCABeamAxis() first
-    trackIndex = id;
-    float sxx = src.getSigmaX2(), syy = src.getSigmaY2(), sxy = src.getSigmaYX();
-    float cx = mLine.mCosinesDirector[0];
-    float cy = mLine.mCosinesDirector[1];
-    float cz = mLine.mCosinesDirector[2];
-    float pt2 = cx * cx + cy * cy;
-    float szz = (pt2 > 1e-6f) ? 0.5f * (sxx + syy) * (cz * cz) / pt2 : 1e10f; // RSTODO check the logic
-    float det = sxx * syy - sxy * sxy;
-    if (det <= 1e-20f) {
-      mSig2ZI = -1.f;
-      return;
-    }
-    float detI = 1.f / det;
-    mSig2XI = syy * detI;
-    mSig2YI = sxx * detI;
-    mSigXYI = -sxy * detI;
-    // z weight from error propagation of transverse cov along track direction
-    // xz and yz correlations neglected (mSigXZI = mSigYZI = 0)
-    mSig2ZI = (szz > 0.f) ? 1.f / szz : 0.f;
-  }
-  bool isValid() const { return mSig2ZI > 0.f; }
+  TrackVF(const NA6PTrackParCov& src, int id, float beamX, float beamY);
+  bool isValid() const { return mZSeedWeight > 0.f; }
   bool canUse() const { return vtxID == kNoVtx; }
   bool canAssign() const { return wgh > 0. && vtxID == kNoVtx; }
 
-  std::array<float, 3> getResiduals(const std::array<float, 3>& vtxPos) const
-  {
-    // vector from closest point on line to vtxPos
-    auto comps = mLine.getDCAComponents(vtxPos);
-    return {comps[0], comps[3], comps[5]}; // dx, dy, dz components
-  }
-
-  float evalChi2ToVertex(const std::array<float, 3>& vtxPos) const
-  {
-    const auto res = getResiduals(vtxPos); // track-vertex residuals and chi2
-    return evalChi2ToVertex(res[0], res[1]);
-  }
-
-  float evalChi2ToVertex(float dx, float dy) const
-  {
-    constexpr float NDOF2I = 0.5f;
-    float chi2T = dx * dx * mSig2XI + 2.f * dx * dy * mSigXYI + dy * dy * mSig2YI;
-    chi2T *= NDOF2I;
-    return chi2T;
-  }
-
-  ClassDefNV(TrackVF, 1);
+  ClassDefNV(TrackVF, 2);
 };
 
 struct VertexSeed {
   float x = 0.f, y = 0.f, z = 0.f;
   double wghSum = 0.;                                                                              // sum of tracks weights
-  double wghChi2 = 0.;                                                                             // sum of tracks weighted chi2's
+  double wghChi2 = 0.;                                                                             // sum of weighted chi2 per residual
   double cxx = 0., cyy = 0., czz = 0., cxy = 0., cxz = 0., cyz = 0., cx0 = 0., cy0 = 0., cz0 = 0.; // elements of lin.equation matrix
   float scaleSigma2 = 1.;                                                                          // scaling parameter on top of Tukey param
   float scaleSigma2Prev = 1.;
@@ -196,27 +153,27 @@ class NA6PVertexerTracks
   void finalizeVertex(NA6PVertex& vtx, std::vector<NA6PVertex>& vertices);
 
  private:
-  std::vector<TrackVF> mTracksPool;               ///< tracks in internal representation used for vertexing
-  float mBeamX = 0.;                              ///< beam transverse coordindates
-  float mBeamY = 0.;                              ///< beam transverse coordindates
-  float mMaxDCA = 0.05;                           ///< cut on DCA of track to beam line (cm)
-  float mZMin = -20.0;                            ///< z range, min, cm
-  float mZMax = 5.;                               ///< z range, max, cm
-  int mNBinsForPeakFind = 250;                    ///< 0.1 cm per bin
-  float mZBinWidth = 0.1;                         ///< bin width
-  std::vector<float> mHistZ;                      ///< histogram for the peak finding method
-  std::vector<int> mFilledBinsZ;                  ///< indices of non-empty bins
-  int mMaxVerticesPerCluster = 5;                 ///< one vertex per target
-  int mMaxTrialsPerCluster = 100;                 //
-  static constexpr float kAlmost0F = 1e-7f;       ///< tiny float
+  std::vector<TrackVF> mTracksPool;         ///< tracks in internal representation used for vertexing
+  float mBeamX = 0.;                        ///< beam transverse coordinates
+  float mBeamY = 0.;                        ///< beam transverse coordinates
+  float mMaxDCA = 0.05;                     ///< cut on DCA of track to beam line (cm)
+  float mZMin = -20.0;                      ///< z range, min, cm
+  float mZMax = 5.;                         ///< z range, max, cm
+  int mNBinsForPeakFind = 250;              ///< 0.1 cm per bin
+  float mZBinWidth = 0.1;                   ///< bin width
+  std::vector<float> mHistZ;                ///< histogram for the peak finding method
+  std::vector<int> mFilledBinsZ;            ///< indices of non-empty bins
+  int mMaxVerticesPerCluster = 5;           ///< one vertex per target
+  int mMaxTrialsPerCluster = 100;           //
+  static constexpr float kAlmost0F = 1e-7f; ///< tiny float
   //  static constexpr float kScaleStability = 0.1f;  ///< tolerance for scale change
-  static constexpr float kDefTukey = 5.0f;        ///< def.value for tukey constant
+  static constexpr float kDefTukey = 5.0f;        ///< def.value for Tukey constant
   float mTukey2I = 1.f / (kDefTukey * kDefTukey); ///< 1./[Tukey parameter]^2
   float mInitScaleSigma2 = 10.f;                  ///< scaling parameter on top of Tukey param
   int mMaxIterations = 20;                        ///< max iterations per vertex fit
   int mMinTracksPerVtx = 2;                       ///< minimum number of tracks per vertex
   float mMinScale2 = 1.;                          ///< min scaling factor^2
-  float mMaxScale2 = 50.;                         ///< max slaling factor^2
+  float mMaxScale2 = 50.;                         ///< max scaling factor^2
   float mMaxChi2Mean = 30.;                       ///< max mean chi2 of vertex to accept
   int mMaxNScaleIncreased = 5;                    ///< max number of scaling-non-decreasing iterations
   float mSlowConvergenceFactor = 0.5;             ///< consider convergence as slow if ratio new/old scale2 exceeds it

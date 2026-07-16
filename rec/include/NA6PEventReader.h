@@ -8,6 +8,7 @@
 #include "NA6PVertex.h"
 #include "NA6PTrack.h"
 #include "NA6PMatching.h"
+#include "NA6PMCEventHeader.h"
 
 #include <cstdint>
 #include <memory>
@@ -74,9 +75,7 @@ public:
     }
 
     if (mTreeMC) {
-      mTreeMC->SetBranchAddress("mVX", &mMCVX);
-      mTreeMC->SetBranchAddress("mVY", &mMCVY);
-      mTreeMC->SetBranchAddress("mVZ", &mMCVZ);
+      mTreeMC->SetBranchAddress("header", &mMCHeader);
       mTreeMC->SetBranchAddress("tracks", &mMCParticles);
     }
 
@@ -117,9 +116,7 @@ public:
 
   std::int64_t currentEntry() const { return mCurrentEntry; }
 
-  float mcVX() const { return mMCVX; }
-  float mcVY() const { return mMCVY; }
-  float mcVZ() const { return mMCVZ; }
+  NA6PMCEventHeader* mcHeader() const { return mMCHeader; }
 
   const std::vector<NA6PVertex>& verticesVerTel() const
   {
@@ -258,10 +255,7 @@ private:
   std::vector<NA6PTrack>* mTracksMuonSpec = nullptr;
   std::vector<NA6PMatch>* mMatches = nullptr;
   std::vector<TParticle>* mMCParticles = nullptr;
-
-  float mMCVX = -999.f;
-  float mMCVY = -999.f;
-  float mMCVZ = -999.f;
+  NA6PMCEventHeader* mMCHeader = nullptr;
 
   std::int64_t mEntries = 0;
   std::int64_t mCurrentEntry = -1;

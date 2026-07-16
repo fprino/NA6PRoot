@@ -17,7 +17,7 @@ struct NA6PLayoutParam : public na6p::conf::ConfigurableParamHelper<NA6PLayoutPa
   float xMaxFieldDump = 200.f;  // max X of the magnetic field in cm
   float yMinFieldDump = -200.f; // min Y of the magnetic field in cm
   float yMaxFieldDump = 200.f;  // max Y of the magnetic field in cm
-  float zMinFieldDump = -10.f; // min Z of the magnetic field in cm
+  float zMinFieldDump = -10.f;  // min Z of the magnetic field in cm
   float zMaxFieldDump = 900.f;  // max Z of the magnetic field in cm
   float stepFieldDump = 5.f;    // step in cm for the magnetic field map
   std::string fieldMap = "field_map.txt";
@@ -46,22 +46,24 @@ struct NA6PLayoutParam : public na6p::conf::ConfigurableParamHelper<NA6PLayoutPa
   std::string medTarget[MaxTargets] = {"Lead", "Lead", "Lead", "Lead", "Lead"};
 
   // VerTel
-  bool useCoolingPlate = false;
-  float coolingPlateThickness = 0.4f;
-  std::string medPlateVerTel = "CarbonFoam";
   int nVerTelPlanes = 5;                  // number of stations
   float shiftVerTel[3] = {0.f, 0.f, 0.f}; // VerTel box global shift, added to posVerTelPlaneX,Y,Z
   float posVerTelPlaneX[MaxVTPlanes] = {};
   float posVerTelPlaneY[MaxVTPlanes] = {};
   float posVerTelPlaneZ[MaxVTPlanes] = {7.1175f, 15.1175f, 20.1175f, 25.1175f, 38.1175f};
+  int sensorsPerPlane[MaxVTPlanes] = {3, 4, 5, 6, 7};
+  float pixChipOffsXFront = 0.66f;
+  float pixChipOffsXBack = 0.31f;
+  float pixChipOffsY = 0.31f;
+  float shiftFiberWindow = 0.67f;
 
   // Muon Stations
   int nMSPlanes = 6;                  // number of stations
   float shiftMS[3] = {0.f, 0.f, 0.f}; // MS global shift, added to posMSPlaneX,Y,Z
   float posMSPlaneX[MaxMSPlanes] = {};
   float posMSPlaneY[MaxMSPlanes] = {};
-  float msChipDX[MaxMSPlanes] = {20.f, 20.f, 120.f, 160.f, 210.f, 230.f}; 
-  float msChipDY[MaxMSPlanes] = {20.f, 20.f, 120.f, 160.f, 210.f, 230.f}; 
+  float msChipDX[MaxMSPlanes] = {20.f, 20.f, 120.f, 160.f, 210.f, 230.f};
+  float msChipDY[MaxMSPlanes] = {20.f, 20.f, 120.f, 160.f, 210.f, 230.f};
   float posMSPlaneZ[MaxMSPlanes] = {300.f, 360.f, 530.f, 590.f, 810.f, 850.f};
   float thicknessMSPlane[MaxMSPlanes] = {0.06f, 0.06f, 0.06f, 0.06f, 0.06f, 0.06f};
   float dimXMSPlane[MaxMSPlanes] = {160.f, 240.f, 240.f, 320.f, 420.f, 460.f}; // size in X of rectangular plane. or diameter if dimYMSPlane is 0
@@ -79,8 +81,8 @@ struct NA6PLayoutParam : public na6p::conf::ConfigurableParamHelper<NA6PLayoutPa
   float dimXAbsorber[MaxAbsorberSlices] = {39.5f, 52.f, 80.f, 120.f, 170.f, 200.f, 220.f, /*wall*/ 550.f, 550.f, 550.f};      // size in X of rectangular abs. or diameter if dimYAbsorber is 0
   float dimYAbsorber[MaxAbsorberSlices] = {39.5f, 52.f, 80.f, 120.f, 170.f, 200.f, 220.f, /*wall*/ 550.f, 550.f, 550.f};      // size in Y if >0
   float radPlug[MaxAbsorberSlices] = {2.47f, 2.47f, 4.0f, 5.48f, 11.f, 11.f, 11.f, 0.f, 0.f, 0.f};                            // radius of the plug
-  float radPlugInt[MaxAbsorberSlices] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};                            // radius of the plug
-  float radAir[MaxAbsorberSlices] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};                                // radius of the residual air surrounding the plug
+  float radPlugInt[MaxAbsorberSlices] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};                                   // radius of the plug
+  float radAir[MaxAbsorberSlices] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};                                       // radius of the residual air surrounding the plug
   float killParticlesBelowEAbsorber[MaxAbsorberSlices] = {0.1, 0.1, 0.1, 0.1, 0.05, 0.01, 0.005, /*wall*/ 0.01, 0.01, 0.001}; // kill entering particles with momentum below this (for speed up)
   std::string medAbsorber[MaxAbsorberSlices] = {"BeO", "BeO", "BeO", "BeO", "Graphite", "Graphite", "Graphite", /*wall*/ "Graphite", "Graphite", "Graphite"};
   std::string medAbsorberPlug[MaxAbsorberSlices] = {"Tungsten", "Tungsten", "Tungsten", "Tungsten", "Tungsten", "Tungsten", ""};

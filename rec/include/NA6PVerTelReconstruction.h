@@ -25,6 +25,8 @@
 #include "NA6PVerTelClusterizer.h"
 #include "NA6PTrack.h"
 #include "NA6PVertex.h"
+#include "NA6PVerTelSegmentation.h"
+#include "NA6PVerTelDigitizer.h"
 #include "NA6PReconstruction.h"
 
 class TFile;
@@ -54,7 +56,7 @@ class NA6PVerTelReconstruction : public NA6PReconstruction
   void closeClustersOutput() override;
   // fast method to smear the hits bypassing digitization and cluster finder
   void setClusterSpaceResolution(double clures) { mCluRes = clures; }
-  void setEmulateNoGaps(bool val = true) { mEmulateNoGaps = val; }
+  void setEmulateNoGaps(bool val = true) { mSegmentation.setStaggered(true); }
   void hitsToRecPoints(const std::vector<NA6PVerTelHit>& hits);
   void digitsToRecPoints(const std::vector<NA6PVerTelDigit>& vtDigits, const NA6PMCTruthContainer& digMCLabels);
 
@@ -82,7 +84,6 @@ class NA6PVerTelReconstruction : public NA6PReconstruction
   TFile* mClusFile = nullptr;                                          // file with clusters
   TTree* mClusTree = nullptr;                                          // tree of clusters
   double mCluRes = 5.e-4;                                              // cluster resolution, cm (for fast simu)
-  bool mEmulateNoGaps = false;                                         // enable sensor acceptance overlaps in hitsToRecPoints
   std::vector<NA6PVertex> mVertices, *hVerticesPtr = &mVertices;       // vector of vertices
   TFile* mVertexFile = nullptr;                                        // file with vertices
   TTree* mVertexTree = nullptr;                                        // tree of vertices
@@ -91,6 +92,8 @@ class NA6PVerTelReconstruction : public NA6PReconstruction
   TTree* mTrackTree = nullptr;                                         // tree of tracks
   std::unique_ptr<NA6PVertexerTracklets> mVTTrackletVertexer;          // vertexer
   std::unique_ptr<NA6PTrackerCA> mVTTracker;                           // tracker
+  NA6PVerTelSegmentation mSegmentation;                                // segmentation class
+  NA6PVerTelDigitizer mDigitizer;                                      // digitizer class
 
   ClassDefNV(NA6PVerTelReconstruction, 1);
 };

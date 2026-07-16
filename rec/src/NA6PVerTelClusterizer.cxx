@@ -304,6 +304,9 @@ bool NA6PVerTelClusterizer::pixelsToRecPoint()
   for (int jLabC = 0; jLabC < nCluLabels; ++jLabC) {
     mCluMCLabelsPtr->addElement(cluID, mLabelsBuff[jLabC]);
   }
+  if (nCluLabels >= 0) {
+    clu.setParticleID(mLabelsBuff[0].getTrackID());
+  }
   return true;
 }
 

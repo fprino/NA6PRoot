@@ -188,18 +188,18 @@ int main(int argc, char** argv)
   if (doDigitsToRecPoints) {
     TreeFromFile tfVT("DigitsVerTel.root", "digitsVerTel");
     std::vector<NA6PVerTelDigit> vtDigits, *vtDigitsPtr = &vtDigits;
-    NA6PMCTruthContainer digMCLabels, *digMCLabelsPtr = &digMCLabels;
+    NA6PMCTruthContainer vtDigMCLabels, *vtDigMCLabelsPtr = &vtDigMCLabels;
     tfVT.getTree()->SetBranchAddress("VerTel", &vtDigitsPtr);
-    tfVT.getTree()->SetBranchAddress("VerTelMCTruth", &digMCLabelsPtr);
+    tfVT.getTree()->SetBranchAddress("VerTelMCTruth", &vtDigMCLabelsPtr);
     int nEvVT = tfVT.getTree()->GetEntriesFast();
     vtrec->createClustersOutput();
     for (int jEv = 0; jEv < nEvVT; jEv++) {
       tfVT.getTree()->GetEvent(jEv);
       int nDigits = vtDigits.size();
-      int nMClabels = digMCLabels.getNElements();
+      int nMClabels = vtDigMCLabels.getNElements();
       LOGP(info, "VerTel Event {} nDigits = {} nDigMClabels = {}", jEv, nDigits, nMClabels);
       vtrec->clearClusters();
-      vtrec->digitsToRecPoints(vtDigits, digMCLabels);
+      vtrec->digitsToRecPoints(vtDigits, vtDigMCLabels);
       vtrec->writeClusters();
     }
     vtrec->closeClustersOutput();
@@ -215,9 +215,11 @@ int main(int argc, char** argv)
 
   std::unique_ptr<TreeFromFile> tfCVT, tfCMS;
   std::vector<NA6PVerTelCluster> vtClus, *vtClusPtr = &vtClus;
+  NA6PMCTruthContainer vtCluMCLabels, *vtCluMCLabelsPtr = &vtCluMCLabels;
   if (doTrackletVertex || doVTTracking) {
     tfCVT = std::make_unique<TreeFromFile>("ClustersVerTel.root", "clustersVerTel");
     tfCVT->getTree()->SetBranchAddress("VerTel", &vtClusPtr);
+    tfCVT->getTree()->SetBranchAddress("VerTelMCTruth", &vtCluMCLabelsPtr);
   }
   std::vector<NA6PMuonSpecCluster> msClus, *msClusPtr = &msClus;
   if (doMSTracking) {
@@ -265,6 +267,7 @@ int main(int argc, char** argv)
         tfCVT->getTree()->GetEvent(jEv);
         vtrec->setPrimaryVertex(&pvert);
         vtrec->setClusters(vtClus);
+        vtrec->setClustersMCLabels(vtCluMCLabels);
         if (doTrackletVertex)
           vtrec->runVertexerTracklets();
         if (doVTTracking)

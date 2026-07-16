@@ -62,6 +62,10 @@ class NA6PVerTelReconstruction : public NA6PReconstruction
 
   // methods to steer tracking
   void setClusters(std::vector<NA6PVerTelCluster>& clusters);
+  void setClustersMCLabels(NA6PMCTruthContainer& mcCluLabels)
+  {
+    hCluMCLabelsPtr = &mcCluLabels;
+  }
   void createVerticesOutput() override;
   void clearVertices() override { mVertices.clear(); }
   void writeVertices() override;

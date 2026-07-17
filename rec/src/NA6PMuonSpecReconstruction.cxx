@@ -36,6 +36,7 @@ void NA6PMuonSpecReconstruction::createClustersOutput()
   mClusFile = TFile::Open(nm.c_str(), "recreate");
   mClusTree = new TTree(fmt::format("clusters{}", getName()).c_str(), fmt::format("{} Clusters", getName()).c_str());
   mClusTree->Branch(getName().c_str(), &hClusPtr);
+  mClusTree->Branch(fmt::format("{}MCTruth", getName()).c_str(), &hCluMCLabelsPtr);
   LOGP(info, "Will store {} clusters in {}", getName(), nm);
 }
 
@@ -105,12 +106,15 @@ void NA6PMuonSpecReconstruction::hitsToRecPoints(const std::vector<NA6PMuonSpecM
         layer = i + layout.nVerTelPlanes;
       }
     }
+    int cluID = mClusters.size();
     mClusters.emplace_back(x, y, z, clusiz, layer);
     auto& clu = mClusters.back();
     clu.setErr(ex2clu, 0., ey2clu);
     clu.setDetectorID(nDet);
     clu.setParticleID(idPart);
     clu.setHitID(jHit);
+    NA6PMCComposedLabel lbl(hit.getTrackID(), 0, 0);
+    mCluMCLabels.addElement(cluID, lbl);
   }
 }
 
@@ -149,7 +153,7 @@ void NA6PMuonSpecReconstruction::closeTracksOutput()
 void NA6PMuonSpecReconstruction::runTracking()
 {
   clearTracks();
-  mMSTracker->findTracks(*hClusPtr, mPrimaryVertex);
+  mMSTracker->findTracks(*hClusPtr, *hCluMCLabelsPtr, mPrimaryVertex);
   mTracks = mMSTracker->getTracks();
   writeTracks();
 }

@@ -17,11 +17,11 @@
 
 #include <string>
 #include <Rtypes.h>
-#include <TVector3.h>
 
 // Class to steer the VT reconstruction
 
 #include "NA6PMuonSpecCluster.h"
+#include "NA6PMCTruthContainer.h"
 #include "NA6PTrack.h"
 #include "NA6PVertex.h"
 #include "NA6PReconstruction.h"
@@ -42,7 +42,11 @@ class NA6PMuonSpecReconstruction : public NA6PReconstruction
   bool initTracker();
   // methods to steer cluster reconstruction
   void createClustersOutput() override;
-  void clearClusters() override { mClusters.clear(); }
+  void clearClusters() override
+  {
+    mClusters.clear();
+    mCluMCLabels.clear_andfreememory();
+  }
   void writeClusters() override;
   void closeClustersOutput() override;
   // fast method to smear the hits bypassing digitization and cluster finder
@@ -53,6 +57,10 @@ class NA6PMuonSpecReconstruction : public NA6PReconstruction
 
   // methods to steer tracking
   void setClusters(std::vector<NA6PMuonSpecCluster>& clusters);
+  void setClustersMCLabels(NA6PMCTruthContainer& mcCluLabels)
+  {
+    hCluMCLabelsPtr = &mcCluLabels;
+  }
 
   void createTracksOutput() override;
   void clearTracks() override { mTracks.clear(); }
@@ -61,15 +69,16 @@ class NA6PMuonSpecReconstruction : public NA6PReconstruction
   void runTracking();
 
  private:
-  std::vector<NA6PMuonSpecCluster> mClusters, *hClusPtr = &mClusters; // vector of clusters
-  TFile* mClusFile = nullptr;                                         // file with clusters
-  TTree* mClusTree = nullptr;                                         // tree of clusters
-  double mCluResX = 100.e-4;                                          // cluster resolution, cm (for fast simu)
-  double mCluResY = 500.e-4;                                          // cluster resolution, cm (for fast simu)
-  std::vector<NA6PTrack> mTracks, *hTrackPtr = &mTracks;              // vector of tracks
-  TFile* mTrackFile = nullptr;                                        // file with tracks
-  TTree* mTrackTree = nullptr;                                        // tree of tracks
-  std::unique_ptr<NA6PTrackerCA> mMSTracker;                          // tracker
+  std::vector<NA6PMuonSpecCluster> mClusters, *hClusPtr = &mClusters;  // vector of clusters
+  NA6PMCTruthContainer mCluMCLabels, *hCluMCLabelsPtr = &mCluMCLabels; // MC labels
+  TFile* mClusFile = nullptr;                                          // file with clusters
+  TTree* mClusTree = nullptr;                                          // tree of clusters
+  double mCluResX = 100.e-4;                                           // cluster resolution, cm (for fast simu)
+  double mCluResY = 500.e-4;                                           // cluster resolution, cm (for fast simu)
+  std::vector<NA6PTrack> mTracks, *hTrackPtr = &mTracks;               // vector of tracks
+  TFile* mTrackFile = nullptr;                                         // file with tracks
+  TTree* mTrackTree = nullptr;                                         // tree of tracks
+  std::unique_ptr<NA6PTrackerCA> mMSTracker;                           // tracker
 
   ClassDefNV(NA6PMuonSpecReconstruction, 1);
 };

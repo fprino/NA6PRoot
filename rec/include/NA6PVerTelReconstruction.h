@@ -17,11 +17,11 @@
 
 #include <string>
 #include <Rtypes.h>
-#include <TVector3.h>
 
 // Class to steer the VT reconstruction
 
 #include "NA6PVerTelCluster.h"
+#include "NA6PMCTruthContainer.h"
 #include "NA6PVerTelClusterizer.h"
 #include "NA6PTrack.h"
 #include "NA6PVertex.h"
@@ -64,6 +64,10 @@ class NA6PVerTelReconstruction : public NA6PReconstruction
 
   // methods to steer tracking
   void setClusters(std::vector<NA6PVerTelCluster>& clusters);
+  void setClustersMCLabels(NA6PMCTruthContainer& mcCluLabels)
+  {
+    hCluMCLabelsPtr = &mcCluLabels;
+  }
   void createVerticesOutput() override;
   void clearVertices() override { mVertices.clear(); }
   void writeVertices() override;

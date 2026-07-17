@@ -17,6 +17,7 @@
 
 #include <string>
 #include <Rtypes.h>
+#include "NA6PMCComposedLabel.h"
 #include "NA6PTrackParCov.h"
 
 class NA6PBaseCluster;
@@ -63,6 +64,7 @@ class NA6PTrack : public NA6PTrackParCov
   int getClusterIndex(int lr) const { return lr < kMaxLr ? mClusterIndices[lr] : -1; }
   int getParticleLabel(int lr) const { return lr < kMaxLr ? mClusterPartID[lr] : -2; }
   int getParticleID() const { return mParticleID; }
+  NA6PMCComposedLabel getMCLabel() const { return mMCCompLab; }
   int getCAIteration() const { return mCAIteration; }
 
   void setParticleLabel(int idx, int lr)
@@ -76,6 +78,7 @@ class NA6PTrack : public NA6PTrackParCov
       mClusterIndices[lr] = idx;
   }
   void setParticleID(int idx) { mParticleID = idx; }
+  void setMCLabel(NA6PMCComposedLabel& lab) { mMCCompLab = lab; }
   void setCAIteration(int iter) { mCAIteration = iter; }
 
   template <typename ClusterType>
@@ -95,10 +98,11 @@ class NA6PTrack : public NA6PTrackParCov
   uint32_t mClusterMap = 0;                  // pattern of clusters per layer
   int mNClusters = 0;                        // total hits
   int mParticleID = -1;                      // particle ID (MC truth)
+  NA6PMCComposedLabel mMCCompLab;            // MC composed label (will replace particle ID)
   int mCAIteration = -1;                     //! CA iteration (for debug)
 
  private:
-  ClassDefNV(NA6PTrack, 2)
+  ClassDefNV(NA6PTrack, 3)
 };
 
 #endif

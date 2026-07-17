@@ -803,7 +803,6 @@ void NA6PTrackerCA::findRoads(const std::vector<std::pair<int, int>>& cneigh,
 template <typename ClusterType>
 void NA6PTrackerCA::fitAndSelectTracks(const std::vector<TrackCandidate>& trackCands,
                                        const std::vector<ClusterType>& cluArr,
-                                       const NA6PMCTruthContainer& mcCluLabels,
                                        std::vector<TrackFitted>& tracks,
                                        const NA6PVertex* primVert,
                                        float maxChi2TrClu,
@@ -941,14 +940,20 @@ void NA6PTrackerCA::fitAndSelectTracks(const std::vector<TrackCandidate>& trackC
       idPartTrack *= -1;
     }
     track.trackFitFast.setParticleID(idPartTrack);
+    tracks.push_back(std::move(track));
+  }
+}
+
+void NA6PTrackerCA::assignMCLabels(const NA6PMCTruthContainer& mcCluLabels)
+{
+  for (auto& fittr : mFinalTracks) {
+    NA6PTrack& tr = fittr.trackFitFast;
     // assign label using MCTruthContainer
     std::vector<std::pair<NA6PMCComposedLabel, int>> countLabs;
-    for (int jClu = 0; jClu < nClus; jClu++) {
-      int cluID = track.cluIDs[jClu];
+    for (int jLay = 0; jLay < NA6PTrack::kMaxLr; ++jLay) {
+      int cluID = tr.getClusterIndex(jLay);
       if (cluID >= 0) {
-        const auto& clu = cluArr[cluID];
-        int originalID = clu.getClusterIndex();
-        std::span labels = mcCluLabels.getLabels(originalID);
+        std::span labels = mcCluLabels.getLabels(cluID);
         int nLabels = labels.size();
         for (int jLab = 0; jLab < nLabels; jLab++) {
           NA6PMCComposedLabel lbl = labels[jLab];
@@ -977,12 +982,10 @@ void NA6PTrackerCA::fitAndSelectTracks(const std::vector<TrackCandidate>& trackC
     }
     // assign fake label to tracks with misassociations
     if (lblTrack.isSet()) {
-      for (int jClu = 0; jClu < nClus; jClu++) {
-        int cluID = track.cluIDs[jClu];
+      for (int jLay = 0; jLay < NA6PTrack::kMaxLr; ++jLay) {
+        int cluID = tr.getClusterIndex(jLay);
         if (cluID >= 0) {
-          const auto& clu = cluArr[cluID];
-          int originalID = clu.getClusterIndex();
-          std::span labels = mcCluLabels.getLabels(originalID);
+          std::span labels = mcCluLabels.getLabels(cluID);
           int nLabels = labels.size();
           bool found = false;
           for (int jLab = 0; jLab < nLabels; jLab++) {
@@ -999,8 +1002,7 @@ void NA6PTrackerCA::fitAndSelectTracks(const std::vector<TrackCandidate>& trackC
         }
       }
     }
-    track.trackFitFast.setMCLabel(lblTrack);
-    tracks.push_back(std::move(track));
+    tr.setMCLabel(lblTrack);
   }
 }
 
@@ -1085,7 +1087,7 @@ void NA6PTrackerCA::findTracks(std::vector<ClusterType>& cluArr,
     if (mVerbose)
       printStats(trackCandidates, cluArr, foundCells, "track candidates");
     //
-    fitAndSelectTracks(trackCandidates, cluArr, mcCluLabels, iterationTracks, primVert, mMaxChi2TrClCellsCA[jIteration], mMinNClusTracksCA[jIteration], mMaxChi2ndfTracksCA[jIteration]);
+    fitAndSelectTracks(trackCandidates, cluArr, iterationTracks, primVert, mMaxChi2TrClCellsCA[jIteration], mMinNClusTracksCA[jIteration], mMaxChi2ndfTracksCA[jIteration]);
     if (mVerbose) {
       printStats(iterationTracks, cluArr, foundCells, "selected tracks");
       printStats(iterationTracks, cluArr, foundCells, "selected tracks", 5);
@@ -1096,6 +1098,7 @@ void NA6PTrackerCA::findTracks(std::vector<ClusterType>& cluArr,
     }
     mFinalTracks.insert(mFinalTracks.end(), iterationTracks.begin(), iterationTracks.end());
   }
+  assignMCLabels(mcCluLabels);
 }
 
 //______________________________________________________________________

@@ -128,6 +128,7 @@ class NA6PTrackerCA
 
   template <typename ClusterType>
   void findTracks(std::vector<ClusterType>& cluArr, const NA6PMCTruthContainer& mcCluLabels, const NA6PVertex* primVert);
+  void assignMCLabels(const NA6PMCTruthContainer& mcCluLabels);
 
   std::vector<NA6PTrack> getTracks();
   template <typename ClusterType>
@@ -201,7 +202,6 @@ class NA6PTrackerCA
   template <typename ClusterType>
   void fitAndSelectTracks(const std::vector<TrackCandidate>& trackCands,
                           const std::vector<ClusterType>& cluArr,
-                          const NA6PMCTruthContainer& mcCluLabels,
                           std::vector<TrackFitted>& tracks,
                           const NA6PVertex* primVert,
                           float maxChi2TrClu,

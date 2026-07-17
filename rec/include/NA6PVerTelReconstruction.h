@@ -17,11 +17,11 @@
 
 #include <string>
 #include <Rtypes.h>
-#include <TVector3.h>
 
 // Class to steer the VT reconstruction
 
 #include "NA6PVerTelCluster.h"
+#include "NA6PMCTruthContainer.h"
 #include "NA6PVerTelClusterizer.h"
 #include "NA6PTrack.h"
 #include "NA6PVertex.h"

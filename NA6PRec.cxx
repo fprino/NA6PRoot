@@ -222,9 +222,11 @@ int main(int argc, char** argv)
     tfCVT->getTree()->SetBranchAddress("VerTelMCTruth", &vtCluMCLabelsPtr);
   }
   std::vector<NA6PMuonSpecCluster> msClus, *msClusPtr = &msClus;
+  NA6PMCTruthContainer msCluMCLabels, *msCluMCLabelsPtr = &msCluMCLabels;
   if (doMSTracking) {
     tfCMS = std::make_unique<TreeFromFile>("ClustersMuonSpec.root", "clustersMuonSpec");
     tfCMS->getTree()->SetBranchAddress("MuonSpec", &msClusPtr);
+    tfCMS->getTree()->SetBranchAddress("MuonSpecMCTruth", &msCluMCLabelsPtr);
   }
 
   if (doTrackletVertex || doVTTracking || doMSTracking) {
@@ -280,6 +282,7 @@ int main(int argc, char** argv)
         tfCMS->getTree()->GetEvent(jEv);
         msrec->setPrimaryVertex(&pvert);
         msrec->setClusters(msClus);
+        msrec->setClustersMCLabels(msCluMCLabels);
         msrec->runTracking();
       }
     }

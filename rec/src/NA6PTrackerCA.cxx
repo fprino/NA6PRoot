@@ -808,8 +808,7 @@ void NA6PTrackerCA::fitAndSelectTracks(const std::vector<TrackCandidate>& trackC
                                        const NA6PVertex* primVert,
                                        float maxChi2TrClu,
                                        int minNClu,
-                                       float maxChi2NDF,
-                                       bool useMCCont)
+                                       float maxChi2NDF)
 {
 
   std::vector<TrackFitted> fittedTracks;
@@ -942,8 +941,42 @@ void NA6PTrackerCA::fitAndSelectTracks(const std::vector<TrackCandidate>& trackC
       idPartTrack *= -1;
     }
     track.trackFitFast.setParticleID(idPartTrack);
-    if (useMCCont) {
-      std::vector<std::pair<NA6PMCComposedLabel, int>> countLabs;
+    // assign label using MCTruthContainer
+    std::vector<std::pair<NA6PMCComposedLabel, int>> countLabs;
+    for (int jClu = 0; jClu < nClus; jClu++) {
+      int cluID = track.cluIDs[jClu];
+      if (cluID >= 0) {
+        const auto& clu = cluArr[cluID];
+        int originalID = clu.getClusterIndex();
+        std::span labels = mcCluLabels.getLabels(originalID);
+        int nLabels = labels.size();
+        for (int jLab = 0; jLab < nLabels; jLab++) {
+          NA6PMCComposedLabel lbl = labels[jLab];
+          bool found = false;
+          for (auto& p : countLabs) {
+            if (p.first == lbl) {
+              ++p.second;
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            countLabs.push_back({lbl, 1});
+          }
+        }
+      }
+    }
+    NA6PMCComposedLabel lblTrack;
+    lblTrack.unset();
+    int maxCountLabs = 0;
+    for (const auto& p : countLabs) {
+      if (p.second > maxCountLabs) {
+        maxCountLabs = p.second;
+        lblTrack = p.first;
+      }
+    }
+    // assign fake label to tracks with misassociations
+    if (lblTrack.isSet()) {
       for (int jClu = 0; jClu < nClus; jClu++) {
         int cluID = track.cluIDs[jClu];
         if (cluID >= 0) {
@@ -951,57 +984,22 @@ void NA6PTrackerCA::fitAndSelectTracks(const std::vector<TrackCandidate>& trackC
           int originalID = clu.getClusterIndex();
           std::span labels = mcCluLabels.getLabels(originalID);
           int nLabels = labels.size();
+          bool found = false;
           for (int jLab = 0; jLab < nLabels; jLab++) {
             NA6PMCComposedLabel lbl = labels[jLab];
-            bool found = false;
-            for (auto& p : countLabs) {
-              if (p.first == lbl) {
-                ++p.second;
-                found = true;
-                break;
-              }
-            }
-            if (!found) {
-              countLabs.push_back({lbl, 1});
-            }
-          }
-        }
-      }
-      NA6PMCComposedLabel lblTrack;
-      lblTrack.unset();
-      int maxCountLabs = 0;
-      for (const auto& p : countLabs) {
-        if (p.second > maxCountLabs) {
-          maxCountLabs = p.second;
-          lblTrack = p.first;
-        }
-      }
-      // assign fake label to tracks with misassociations
-      if (lblTrack.isSet()) {
-        for (int jClu = 0; jClu < nClus; jClu++) {
-          int cluID = track.cluIDs[jClu];
-          if (cluID >= 0) {
-            const auto& clu = cluArr[cluID];
-            int originalID = clu.getClusterIndex();
-            std::span labels = mcCluLabels.getLabels(originalID);
-            int nLabels = labels.size();
-            bool found = false;
-            for (int jLab = 0; jLab < nLabels; jLab++) {
-              NA6PMCComposedLabel lbl = labels[jLab];
-              if (lbl == lblTrack) {
-                found = true;
-                break;
-              }
-            }
-            if (!found) {
-              lblTrack.setFakeFlag();
+            if (lbl == lblTrack) {
+              found = true;
               break;
             }
           }
+          if (!found) {
+            lblTrack.setFakeFlag();
+            break;
+          }
         }
       }
-      track.trackFitFast.setMCLabel(lblTrack);
     }
+    track.trackFitFast.setMCLabel(lblTrack);
     tracks.push_back(std::move(track));
   }
 }
@@ -1011,8 +1009,7 @@ void NA6PTrackerCA::fitAndSelectTracks(const std::vector<TrackCandidate>& trackC
 template <typename ClusterType>
 void NA6PTrackerCA::findTracks(std::vector<ClusterType>& cluArr,
                                const NA6PMCTruthContainer& mcCluLabels,
-                               const NA6PVertex* primVert,
-                               bool useMCCont)
+                               const NA6PVertex* primVert)
 {
   mNDOF = Propagator::Instance()->getNDOFTrack();
   mFinalTracks.clear();
@@ -1088,7 +1085,7 @@ void NA6PTrackerCA::findTracks(std::vector<ClusterType>& cluArr,
     if (mVerbose)
       printStats(trackCandidates, cluArr, foundCells, "track candidates");
     //
-    fitAndSelectTracks(trackCandidates, cluArr, mcCluLabels, iterationTracks, primVert, mMaxChi2TrClCellsCA[jIteration], mMinNClusTracksCA[jIteration], mMaxChi2ndfTracksCA[jIteration], useMCCont);
+    fitAndSelectTracks(trackCandidates, cluArr, mcCluLabels, iterationTracks, primVert, mMaxChi2TrClCellsCA[jIteration], mMinNClusTracksCA[jIteration], mMaxChi2ndfTracksCA[jIteration]);
     if (mVerbose) {
       printStats(iterationTracks, cluArr, foundCells, "selected tracks");
       printStats(iterationTracks, cluArr, foundCells, "selected tracks", 5);
@@ -1243,9 +1240,7 @@ void NA6PTrackerCA::printStats(const std::vector<T>& candidates,
   }
 }
 
-template void NA6PTrackerCA::findTracks<NA6PMuonSpecCluster>(std::vector<NA6PMuonSpecCluster>&, const NA6PMCTruthContainer&, const NA6PVertex*, bool);
-template void NA6PTrackerCA::findTracks<NA6PVerTelCluster>(std::vector<NA6PVerTelCluster>&, const NA6PMCTruthContainer&, const NA6PVertex*, bool);
-template void NA6PTrackerCA::findTracks<NA6PMuonSpecCluster>(std::vector<NA6PMuonSpecCluster>&, const NA6PVertex*);
-template void NA6PTrackerCA::findTracks<NA6PVerTelCluster>(std::vector<NA6PVerTelCluster>&, const NA6PVertex*);
+template void NA6PTrackerCA::findTracks<NA6PMuonSpecCluster>(std::vector<NA6PMuonSpecCluster>&, const NA6PMCTruthContainer&, const NA6PVertex*);
+template void NA6PTrackerCA::findTracks<NA6PVerTelCluster>(std::vector<NA6PVerTelCluster>&, const NA6PMCTruthContainer&, const NA6PVertex*);
 template std::vector<std::pair<NA6PMuonSpecCluster, NA6PMuonSpecCluster>> NA6PTrackerCA::findTracklets<NA6PMuonSpecCluster>(int, int, std::vector<NA6PMuonSpecCluster>&, const NA6PVertex*);
 template std::vector<std::pair<NA6PVerTelCluster, NA6PVerTelCluster>> NA6PTrackerCA::findTracklets<NA6PVerTelCluster>(int, int, std::vector<NA6PVerTelCluster>&, const NA6PVertex*);

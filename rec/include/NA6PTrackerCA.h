@@ -127,13 +127,8 @@ class NA6PTrackerCA
   bool loadGeometry(const char* filename, const char* geoname = "NA6P");
 
   template <typename ClusterType>
-  void findTracks(std::vector<ClusterType>& cluArr, const NA6PMCTruthContainer& mcCluLabels, const NA6PVertex* primVert, bool useMCCont = true);
-  template <typename ClusterType>
-  void findTracks(std::vector<ClusterType>& cluArr, const NA6PVertex* primVert)
-  {
-    NA6PMCTruthContainer trCont; // dummy object
-    findTracks(cluArr, trCont, primVert, false);
-  }
+  void findTracks(std::vector<ClusterType>& cluArr, const NA6PMCTruthContainer& mcCluLabels, const NA6PVertex* primVert);
+
   std::vector<NA6PTrack> getTracks();
   template <typename ClusterType>
   std::vector<std::pair<ClusterType, ClusterType>> findTracklets(int jFirstLay, int jLastLay, std::vector<ClusterType>& cluArr, const NA6PVertex* primVert);
@@ -211,8 +206,7 @@ class NA6PTrackerCA
                           const NA6PVertex* primVert,
                           float maxChi2TrClu,
                           int minNClu,
-                          float maxChi2NDF,
-                          bool useMCCont = false);
+                          float maxChi2NDF);
   template <typename T, typename ClusterType>
   void printStats(const std::vector<T>& candidates,
                   const std::vector<ClusterType>& cluArr,

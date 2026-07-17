@@ -230,7 +230,7 @@ void NA6PVerTelReconstruction::closeTracksOutput()
 void NA6PVerTelReconstruction::runTracking()
 {
   clearTracks();
-  mVTTracker->findTracks(*hClusPtr, *hCluMCLabelsPtr, mPrimaryVertex, true);
+  mVTTracker->findTracks(*hClusPtr, *hCluMCLabelsPtr, mPrimaryVertex);
   mTracks = mVTTracker->getTracks();
   writeTracks();
 }

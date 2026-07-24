@@ -946,9 +946,8 @@ void NA6PTrackerCA::findTracks(std::vector<ClusterType>& cluArr,
   }
 
   LOGP(info, "Process event with nClusters {}, primary vertex in z = {} cm", nClus, mPrimVertPos[2]);
-  mIsClusterUsed.resize(nClus);
-  for (uint jClu = 0; jClu < nClus; jClu++)
-    mIsClusterUsed[jClu] = false;
+  mIsClusterUsed.clear();
+  mIsClusterUsed.resize(nClus, false);
   std::vector<int> firstCluPerLay;
   std::vector<int> lastCluPerLay;
   sortClustersByLayerAndEta(cluArr, firstCluPerLay, lastCluPerLay);
@@ -1025,9 +1024,8 @@ std::vector<std::pair<ClusterType, ClusterType>> NA6PTrackerCA::findTracklets(in
     mPrimVertPos[0] = mPrimVertPos[1] = mPrimVertPos[2] = 0.0f;
   }
   uint nClus = cluArr.size();
-  mIsClusterUsed.resize(nClus);
-  for (uint jClu = 0; jClu < nClus; jClu++)
-    mIsClusterUsed[jClu] = false;
+  mIsClusterUsed.clear();
+  mIsClusterUsed.resize(nClus, false);
   int backupStart = mLayerStart;
   int backupLay = mNLayers;
   mLayerStart = jFirstLay;

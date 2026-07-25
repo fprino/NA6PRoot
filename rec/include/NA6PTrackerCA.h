@@ -41,7 +41,9 @@ struct TrackletCandidate {
 };
 
 struct CellCandidate {
-  int innerLayer;
+  int8_t innerLayer;
+  int8_t midLayer;
+  int8_t outerLayer;
   int firstTrackletIndex;
   int secondTrackletIndex;
   std::array<int, 3> cluIDs;
@@ -165,6 +167,7 @@ class NA6PTrackerCA
                              float deltaPhiMax);
   template <typename ClusterType>
   void computeLayerCells(const std::vector<TrackletCandidate>& tracklets,
+                         const std::vector<int>& layers,
                          const std::vector<int>& firstIndex,
                          const std::vector<int>& lastIndex,
                          const std::vector<ClusterType>& cluArr,
@@ -186,6 +189,7 @@ class NA6PTrackerCA
                            float maxChi2NDF);
   template <typename ClusterType>
   void findCellsNeighbours(const std::vector<CellCandidate>& cells,
+                           const std::vector<int>& layers,
                            const std::vector<int>& firstIndex,
                            const std::vector<int>& lastIndex,
                            std::vector<std::pair<int, int>>& cneigh,
@@ -194,6 +198,7 @@ class NA6PTrackerCA
   template <typename ClusterType>
   std::vector<TrackCandidate> prolongSeed(const TrackCandidate& seed,
                                           const std::vector<CellCandidate>& cells,
+                                          const std::vector<int>& layers,
                                           const std::vector<int>& firstIndex,
                                           const std::vector<int>& lastIndex,
                                           const std::vector<ClusterType>& cluArr,
@@ -202,6 +207,7 @@ class NA6PTrackerCA
   template <typename ClusterType>
   void findRoads(const std::vector<std::pair<int, int>>& cneigh,
                  const std::vector<CellCandidate>& cells,
+                 const std::vector<int>& layers,
                  const std::vector<int>& firstIndex,
                  const std::vector<int>& lastIndex,
                  const std::vector<TrackletCandidate>& tracklets,

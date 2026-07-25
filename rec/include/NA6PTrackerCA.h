@@ -30,7 +30,8 @@ class NA6PVertex;
 
 // structures for temporary objects used in track finding
 struct TrackletCandidate {
-  int startingLayer;
+  int8_t innerLayer;
+  int8_t outerLayer;
   int firstClusterIndex;
   int secondClusterIndex;
   float tanL;
@@ -40,7 +41,7 @@ struct TrackletCandidate {
 };
 
 struct CellCandidate {
-  int startingLayer;
+  int innerLayer;
   int firstTrackletIndex;
   int secondTrackletIndex;
   std::array<int, 3> cluIDs;
@@ -156,6 +157,7 @@ class NA6PTrackerCA
                                 std::vector<int>& lastIndex);
   template <typename ClusterType>
   void computeLayerTracklets(const std::vector<ClusterType>& cluArr,
+                             const std::vector<int>& layers,
                              const std::vector<int>& firstIndex,
                              const std::vector<int>& lastIndex,
                              std::vector<TrackletCandidate>& tracklets,

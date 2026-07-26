@@ -8,6 +8,7 @@
 #include <TCanvas.h>
 #include <TPaveStats.h>
 #include <TLegend.h>
+#include <TLegendEntry.h>
 #include "NA6PTrack.h"
 #include "MagneticField.h"
 #include "Propagator.h"
@@ -50,7 +51,7 @@ void fillMeanAndRms(TH2F* h2d, TH1F* hMean, TH1F* hRms, TH1F* hSig)
   }
 }
 
-void superposHistos(TH1* h1, TH1* h2, TH1* h3, int col1 = 1, int col2 = kGreen + 1, int col3 = 2)
+void superposHistos(TH1* h1, TH1* h2, TH1* h3, TH1* h4 = nullptr, int col1 = 1, int col2 = kGreen + 1, int col3 = 2, int col4 = 4)
 {
   h1->SetLineColor(col1);
   h1->SetLineWidth(2);
@@ -66,6 +67,11 @@ void superposHistos(TH1* h1, TH1* h2, TH1* h3, int col1 = 1, int col2 = kGreen +
   h3->SetLineColor(col3);
   h3->SetLineWidth(2);
   h3->Draw("sames");
+  if (h4) {
+    h4->SetLineColor(col4);
+    h4->SetLineWidth(2);
+    h4->Draw("sames");
+  }
   gPad->Update();
   TPaveStats* st1 = (TPaveStats*)h1->GetListOfFunctions()->FindObject("stats");
   if (st1) {
@@ -85,10 +91,18 @@ void superposHistos(TH1* h1, TH1* h2, TH1* h3, int col1 = 1, int col2 = kGreen +
     st3->SetY2NDC(0.50);
     st3->SetTextColor(h3->GetLineColor());
   }
+  if (h4) {
+    TPaveStats* st4 = (TPaveStats*)h4->GetListOfFunctions()->FindObject("stats");
+    if (st4) {
+      st4->SetY1NDC(0.09);
+      st4->SetY2NDC(0.29);
+      st4->SetTextColor(h4->GetLineColor());
+    }
+  }
   gPad->Modified();
 }
 
-void plotTracks(const char* dirSimu = ".")
+void plotVerTelTracks(const char* dirSimu = ".")
 {
   auto magField = new MagneticField();
   magField->loadField();
@@ -119,25 +133,33 @@ void plotTracks(const char* dirSimu = ".")
   TH1F* hEtaGen = new TH1F("hEtaGen", ";#eta_{gen};counts", 20, 1., 5.);
   TH1F* hMomTrackable = new TH1F("hMomTrackable", ";p_{gen} (GeV/c);counts", nMomBins, 0., maxP);
   TH1F* hEtaTrackable = new TH1F("hEtaTrackable", ";#eta_{gen};counts", 20, 1., 5.);
-  TH1F* hMomTracked = new TH1F("hMomTracked", ";p_{gen} (GeV/c);counts", nMomBins, 0., maxP);
-  TH1F* hEtaTracked = new TH1F("hEtaTracked", ";#eta_{gen};counts", 20, 1., 5.);
-  TH1F* hMomAllReco = new TH1F("hMomAllReco", ";p (GeV/c); counts", nMomBins, 0., maxP);
-  TH1F* hMomGoodReco = new TH1F("hMomGoodReco", ";p (GeV/c); counts", nMomBins, 0., maxP);
-  TH1F* hMomFakeReco = new TH1F("hMomFakeReco", ";p (GeV/c); counts", nMomBins, 0., maxP);
-  TH1F* hEtaAllReco = new TH1F("hEtaAllReco", ";#eta; counts", 20, 1., 5.);
-  TH1F* hEtaGoodReco = new TH1F("hEtaGoodReco", ";#eta; counts", 20, 1., 5.);
-  TH1F* hEtaFakeReco = new TH1F("hEtaFakeReco", ";#eta; counts", 20, 1., 5.);
+  TH1F* hMomTracked5clu = new TH1F("hMomTracked5clu", ";p_{gen} (GeV/c);counts", nMomBins, 0., maxP);
+  TH1F* hEtaTracked5clu = new TH1F("hEtaTracked5clu", ";#eta_{gen};counts", 20, 1., 5.);
+  TH1F* hMomAllReco5clu = new TH1F("hMomAllReco5clu", ";p (GeV/c); counts", nMomBins, 0., maxP);
+  TH1F* hMomGoodReco5clu = new TH1F("hMomGoodReco5clu", ";p (GeV/c); counts", nMomBins, 0., maxP);
+  TH1F* hMomFakeReco5clu = new TH1F("hMomFakeReco5clu", ";p (GeV/c); counts", nMomBins, 0., maxP);
+  TH1F* hEtaAllReco5clu = new TH1F("hEtaAllReco5clu", ";#eta; counts", 20, 1., 5.);
+  TH1F* hEtaGoodReco5clu = new TH1F("hEtaGoodReco5clu", ";#eta; counts", 20, 1., 5.);
+  TH1F* hEtaFakeReco5clu = new TH1F("hEtaFakeReco5clu", ";#eta; counts", 20, 1., 5.);
+  TH1F* hMomTrackedge4clu = new TH1F("hMomTrackedge4clu", ";p_{gen} (GeV/c);counts", nMomBins, 0., maxP);
+  TH1F* hEtaTrackedge4clu = new TH1F("hEtaTrackedge4clu", ";#eta_{gen};counts", 20, 1., 5.);
+  TH1F* hMomAllRecoge4clu = new TH1F("hMomAllRecoge4clu", ";p (GeV/c); counts", nMomBins, 0., maxP);
+  TH1F* hMomGoodRecoge4clu = new TH1F("hMomGoodRecoge4clu", ";p (GeV/c); counts", nMomBins, 0., maxP);
+  TH1F* hMomFakeRecoge4clu = new TH1F("hMomFakeRecoge4clu", ";p (GeV/c); counts", nMomBins, 0., maxP);
+  TH1F* hEtaAllRecoge4clu = new TH1F("hEtaAllRecoge4clu", ";#eta; counts", 20, 1., 5.);
+  TH1F* hEtaGoodRecoge4clu = new TH1F("hEtaGoodRecoge4clu", ";#eta; counts", 20, 1., 5.);
+  TH1F* hEtaFakeRecoge4clu = new TH1F("hEtaFakeRecoge4clu", ";#eta; counts", 20, 1., 5.);
   TH1F* hNclu = new TH1F("hNclu", ";n_{ITSclus};counts", 7, -0.5, 6.5);
   double impMax = 500.;  // in microns
   double deltaMax = 0.5; // in GeV/c
-  TH2F* hImpParXVsP = new TH2F("hImpParXVsP", ";p (GeV/c);Track Imp. Par. X (#mum)};counts", nMomBins, 0., maxP, 100, -impMax, impMax);
-  TH2F* hImpParYVsP = new TH2F("hImpParYVsP", ";p (GeV/c);Track Imp. Par. Y (#mum)};counts", nMomBins, 0., maxP, 100, -impMax, impMax);
-  TH2F* hDeltaPxVsP = new TH2F("hDeltaPxVsP", ";p (GeV/c);p_{x}^{rec}-p_{x}^{gen} (GeV/c);counts", nMomBins, 0., maxP, 500, -deltaMax, deltaMax);
-  TH2F* hDeltaPyVsP = new TH2F("hDeltaPyVsP", ";p (GeV/c);p_{y}^{rec}-p_{y}^{gen} (GeV/c);counts", nMomBins, 0., maxP, 500, -deltaMax, deltaMax);
-  TH2F* hDeltaPzVsP = new TH2F("hDeltaPzVsP", ";p (GeV/c);p_{z}^{rec}-p_{z}^{gen} (GeV/c);counts", nMomBins, 0., maxP, 500, -deltaMax, deltaMax);
-  TH2F* hRelDeltaPxVsP = new TH2F("hRelDeltaPxVsP", ";p (GeV/c);(p_{x}^{rec}-p_{x}^{gen})/p_{x}^{gen};counts", nMomBins, 0., maxP, 100, -deltaMax, deltaMax);
-  TH2F* hRelDeltaPyVsP = new TH2F("hRelDeltaPyVsP", ";p (GeV/c);(p_{y}^{rec}-p_{y}^{gen})/p_{y}^{gen};counts", nMomBins, 0., maxP, 100, -deltaMax, deltaMax);
-  TH2F* hRelDeltaPzVsP = new TH2F("hRelDeltaPzVsP", ";p (GeV/c);(p_{z}^{rec}-p_{z}^{gen})/p_{z}^{gen};counts", nMomBins, 0., maxP, 100, -deltaMax, deltaMax);
+  TH2F* hImpParXVsP = new TH2F("hImpParXVsP", "5-cluster tracks;p (GeV/c);Track Imp. Par. X (#mum)};counts", nMomBins, 0., maxP, 100, -impMax, impMax);
+  TH2F* hImpParYVsP = new TH2F("hImpParYVsP", "5-cluster tracks;p (GeV/c);Track Imp. Par. Y (#mum)};counts", nMomBins, 0., maxP, 100, -impMax, impMax);
+  TH2F* hDeltaPxVsP = new TH2F("hDeltaPxVsP", "5-cluster tracks;p (GeV/c);p_{x}^{rec}-p_{x}^{gen} (GeV/c);counts", nMomBins, 0., maxP, 500, -deltaMax, deltaMax);
+  TH2F* hDeltaPyVsP = new TH2F("hDeltaPyVsP", "5-cluster tracks;p (GeV/c);p_{y}^{rec}-p_{y}^{gen} (GeV/c);counts", nMomBins, 0., maxP, 500, -deltaMax, deltaMax);
+  TH2F* hDeltaPzVsP = new TH2F("hDeltaPzVsP", "5-cluster tracks;p (GeV/c);p_{z}^{rec}-p_{z}^{gen} (GeV/c);counts", nMomBins, 0., maxP, 500, -deltaMax, deltaMax);
+  TH2F* hRelDeltaPxVsP = new TH2F("hRelDeltaPxVsP", "5-cluster tracks;p (GeV/c);(p_{x}^{rec}-p_{x}^{gen})/p_{x}^{gen};counts", nMomBins, 0., maxP, 100, -deltaMax, deltaMax);
+  TH2F* hRelDeltaPyVsP = new TH2F("hRelDeltaPyVsP", "5-cluster tracks;p (GeV/c);(p_{y}^{rec}-p_{y}^{gen})/p_{y}^{gen};counts", nMomBins, 0., maxP, 100, -deltaMax, deltaMax);
+  TH2F* hRelDeltaPzVsP = new TH2F("hRelDeltaPzVsP", "5-cluster tracks;p (GeV/c);(p_{z}^{rec}-p_{z}^{gen})/p_{z}^{gen};counts", nMomBins, 0., maxP, 100, -deltaMax, deltaMax);
 
   int nEv = trTree->GetEntries();
   printf("Number of events = %d\n", nEv);
@@ -174,7 +196,7 @@ void plotTracks(const char* dirSimu = ".")
       double phiPart = curPart.Phi();
       double thetaPart = std::acos(pzPart / momPart);
       double etaPart = -std::log(std::tan(thetaPart / 2.));
-      if (zOrig < 7 && zDecay > 40 && etaPart > 1 && etaPart < 4) {
+      if (zOrig < 7 && zDecay > 40 && etaPart > 1 && etaPart < 5) {
         hMomGen->Fill(momPart);
         hEtaGen->Fill(etaPart);
       }
@@ -187,7 +209,7 @@ void plotTracks(const char* dirSimu = ".")
           maskHits |= (1 << nLay);
         }
       }
-      if (maskHits == 31) {
+      if (maskHits == 31 || maskHits == 30 || maskHits == 15) {
         hMomTrackable->Fill(momPart);
         hEtaTrackable->Fill(etaPart);
       }
@@ -200,7 +222,7 @@ void plotTracks(const char* dirSimu = ".")
       NA6PMCComposedLabel mcCompLabel = labArr->at(jTr);
       int nClusters = tr.getNHits();
       hNclu->Fill(nClusters);
-      if (nClusters < 5)
+      if (nClusters < 4)
         continue;
       auto pxyzReco = tr.getPXYZ<double>();
       double pxReco = pxyzReco[0];
@@ -212,17 +234,29 @@ void plotTracks(const char* dirSimu = ".")
       double etaReco = -std::log(std::tan(thetaReco / 2.));
       double impparX = tr.getX() - xvert;
       double impparY = tr.getY() - yvert;
-      hImpParXVsP->Fill(momReco, impparX * 1e4);
-      hImpParYVsP->Fill(momReco, impparY * 1e4);
-      hMomAllReco->Fill(momReco);
-      hEtaAllReco->Fill(etaReco);
+      hMomAllRecoge4clu->Fill(momReco);
+      hEtaAllRecoge4clu->Fill(etaReco);
+      if (nClusters == 5) {
+        hImpParXVsP->Fill(momReco, impparX * 1e4);
+        hImpParYVsP->Fill(momReco, impparY * 1e4);
+        hMomAllReco5clu->Fill(momReco);
+        hEtaAllReco5clu->Fill(etaReco);
+      }
       int mcLabel = mcCompLabel.getTrackID();
       if (!mcCompLabel.isFake()) {
-        hMomGoodReco->Fill(momReco);
-        hEtaGoodReco->Fill(etaReco);
+        hMomGoodRecoge4clu->Fill(momReco);
+        hEtaGoodRecoge4clu->Fill(etaReco);
+        if (nClusters == 5) {
+          hMomGoodReco5clu->Fill(momReco);
+          hEtaGoodReco5clu->Fill(etaReco);
+        }
       } else {
-        hMomFakeReco->Fill(momReco);
-        hEtaFakeReco->Fill(etaReco);
+        hMomFakeRecoge4clu->Fill(momReco);
+        hEtaFakeRecoge4clu->Fill(etaReco);
+        if (nClusters == 5) {
+          hMomFakeReco5clu->Fill(momReco);
+          hEtaFakeReco5clu->Fill(etaReco);
+        }
       }
 
       TParticle part = mcArr->at(mcLabel);
@@ -233,45 +267,75 @@ void plotTracks(const char* dirSimu = ".")
       double phiPart = part.Phi();
       double thetaPart = std::acos(pzPart / momPart);
       double etaPart = -std::log(std::tan(thetaPart / 2.));
-      hMomTracked->Fill(momPart);
-      hEtaTracked->Fill(etaPart);
-      hDeltaPxVsP->Fill(momReco, pxReco - pxPart);
-      hDeltaPyVsP->Fill(momReco, pyReco - pyPart);
-      hDeltaPzVsP->Fill(momReco, pzReco - pzPart);
-      hRelDeltaPxVsP->Fill(momReco, (pxReco - pxPart) / pxPart);
-      hRelDeltaPyVsP->Fill(momReco, (pyReco - pyPart) / pyPart);
-      hRelDeltaPzVsP->Fill(momReco, (pzReco - pzPart) / pzPart);
+      hMomTrackedge4clu->Fill(momPart);
+      hEtaTrackedge4clu->Fill(etaPart);
+      if (nClusters == 5) {
+        hMomTracked5clu->Fill(momPart);
+        hEtaTracked5clu->Fill(etaPart);
+        hDeltaPxVsP->Fill(momReco, pxReco - pxPart);
+        hDeltaPyVsP->Fill(momReco, pyReco - pyPart);
+        hDeltaPzVsP->Fill(momReco, pzReco - pzPart);
+        hRelDeltaPxVsP->Fill(momReco, (pxReco - pxPart) / pxPart);
+        hRelDeltaPyVsP->Fill(momReco, (pyReco - pyPart) / pyPart);
+        hRelDeltaPzVsP->Fill(momReco, (pzReco - pzPart) / pzPart);
+      }
     }
   }
 
-  TH1F* hPurityPt = (TH1F*)hMomGoodReco->Clone("hPurityPt");
-  hPurityPt->GetYaxis()->SetTitle("purity");
-  for (int iBin = 1; iBin <= hMomGoodReco->GetNbinsX(); iBin++) {
-    double cg = hMomGoodReco->GetBinContent(iBin);
-    double ct = hMomAllReco->GetBinContent(iBin);
-    if (ct == 0) {
-      hPurityPt->SetBinContent(iBin, 0.);
-      hPurityPt->SetBinError(iBin, 0.);
+  TH1F* hPurityMom5clu = (TH1F*)hMomGoodReco5clu->Clone("hPurityMom5clu");
+  hPurityMom5clu->GetYaxis()->SetTitle("purity");
+  TH1F* hPurityMomge4clu = (TH1F*)hMomGoodRecoge4clu->Clone("hPurityMomge4clu");
+  hPurityMomge4clu->GetYaxis()->SetTitle("purity");
+  for (int iBin = 1; iBin <= hMomGoodReco5clu->GetNbinsX(); iBin++) {
+    double cg5 = hMomGoodReco5clu->GetBinContent(iBin);
+    double ct5 = hMomAllReco5clu->GetBinContent(iBin);
+    if (ct5 == 0) {
+      hPurityMom5clu->SetBinContent(iBin, 0.);
+      hPurityMom5clu->SetBinError(iBin, 0.);
     } else {
-      double p = cg / ct;
-      double ep = std::sqrt(p * (1 - p) / ct);
-      hPurityPt->SetBinContent(iBin, p);
-      hPurityPt->SetBinError(iBin, ep);
+      double p = cg5 / ct5;
+      double ep = std::sqrt(p * (1 - p) / ct5);
+      hPurityMom5clu->SetBinContent(iBin, p);
+      hPurityMom5clu->SetBinError(iBin, ep);
+    }
+    double cg4 = hMomGoodRecoge4clu->GetBinContent(iBin);
+    double ct4 = hMomAllRecoge4clu->GetBinContent(iBin);
+    if (ct4 == 0) {
+      hPurityMomge4clu->SetBinContent(iBin, 0.);
+      hPurityMomge4clu->SetBinError(iBin, 0.);
+    } else {
+      double p = cg4 / ct4;
+      double ep = std::sqrt(p * (1 - p) / ct4);
+      hPurityMomge4clu->SetBinContent(iBin, p);
+      hPurityMomge4clu->SetBinError(iBin, ep);
     }
   }
-  TH1F* hPurityEta = (TH1F*)hEtaGoodReco->Clone("hPurityEta");
-  hPurityEta->GetYaxis()->SetTitle("purity");
-  for (int iBin = 1; iBin <= hEtaGoodReco->GetNbinsX(); iBin++) {
-    double cg = hEtaGoodReco->GetBinContent(iBin);
-    double ct = hEtaAllReco->GetBinContent(iBin);
-    if (ct == 0) {
-      hPurityEta->SetBinContent(iBin, 0.);
-      hPurityEta->SetBinError(iBin, 0.);
+  TH1F* hPurityEta5clu = (TH1F*)hMomGoodReco5clu->Clone("hPurityEta5clu");
+  hPurityEta5clu->GetYaxis()->SetTitle("purity");
+  TH1F* hPurityEtage4clu = (TH1F*)hMomGoodRecoge4clu->Clone("hPurityEtage4clu");
+  hPurityEtage4clu->GetYaxis()->SetTitle("purity");
+  for (int iBin = 1; iBin <= hMomGoodReco5clu->GetNbinsX(); iBin++) {
+    double cg5 = hMomGoodReco5clu->GetBinContent(iBin);
+    double ct5 = hMomAllReco5clu->GetBinContent(iBin);
+    if (ct5 == 0) {
+      hPurityEta5clu->SetBinContent(iBin, 0.);
+      hPurityEta5clu->SetBinError(iBin, 0.);
     } else {
-      double p = cg / ct;
-      double ep = std::sqrt(p * (1 - p) / ct);
-      hPurityEta->SetBinContent(iBin, p);
-      hPurityEta->SetBinError(iBin, ep);
+      double p = cg5 / ct5;
+      double ep = std::sqrt(p * (1 - p) / ct5);
+      hPurityEta5clu->SetBinContent(iBin, p);
+      hPurityEta5clu->SetBinError(iBin, ep);
+    }
+    double cg4 = hMomGoodRecoge4clu->GetBinContent(iBin);
+    double ct4 = hMomAllRecoge4clu->GetBinContent(iBin);
+    if (ct4 == 0) {
+      hPurityEtage4clu->SetBinContent(iBin, 0.);
+      hPurityEtage4clu->SetBinError(iBin, 0.);
+    } else {
+      double p = cg4 / ct4;
+      double ep = std::sqrt(p * (1 - p) / ct4);
+      hPurityEtage4clu->SetBinContent(iBin, p);
+      hPurityEtage4clu->SetBinError(iBin, ep);
     }
   }
 
@@ -314,41 +378,81 @@ void plotTracks(const char* dirSimu = ".")
   TCanvas* cef = new TCanvas("cef", "Efficiency", 1400, 800);
   cef->Divide(2, 2);
   cef->cd(1);
-  superposHistos(hMomGen, hMomTrackable, hMomTracked, kMagenta + 1, kBlue + 1, 1);
+  superposHistos(hMomTrackable, hMomTracked5clu, hMomTrackedge4clu, 0x0, kMagenta + 1, 1, kBlue + 1);
   cef->cd(2);
-  TH1F* hEffMom = (TH1F*)hMomTracked->Clone("hEffMom");
-  hEffMom->Divide(hMomTracked, hMomTrackable, 1., 1., "B");
-  hEffMom->GetYaxis()->SetTitle("Efficiency");
-  hEffMom->SetStats(0);
-  hEffMom->Draw();
+  TH1F* hEffMom5clu = (TH1F*)hMomTracked5clu->Clone("hEffMom5clu");
+  hEffMom5clu->Divide(hMomTracked5clu, hMomTrackable, 1., 1., "B");
+  hEffMom5clu->GetYaxis()->SetTitle("Efficiency");
+  hEffMom5clu->SetStats(0);
+  hEffMom5clu->SetMaximum(1.05);
+  hEffMom5clu->SetMinimum(0.);
+  hEffMom5clu->Draw();
+  TH1F* hEffMomge4clu = (TH1F*)hMomTrackedge4clu->Clone("hEffMomge4clu");
+  hEffMomge4clu->Divide(hMomTrackedge4clu, hMomTrackable, 1., 1., "B");
+  hEffMomge4clu->GetYaxis()->SetTitle("Efficiency");
+  hEffMomge4clu->SetStats(0);
+  hEffMomge4clu->Draw("same");
+  TLegend *lege = new TLegend(0.3, 0.15, 0.85, 0.3);
+  lege->SetMargin(0.1);
+  lege->AddEntry(hEffMom5clu, "5 cluster tracks", "L")->SetTextColor(hEffMom5clu->GetLineColor());
+  lege->AddEntry(hEffMomge4clu, ">= 4 cluster tracks", "L")->SetTextColor(hEffMomge4clu->GetLineColor());
+  lege->Draw();
   cef->cd(3);
-  superposHistos(hEtaGen, hEtaTrackable, hEtaTracked, kMagenta + 1, kBlue + 1, 1);
+  superposHistos(hEtaTrackable, hEtaTracked5clu, hEtaTrackedge4clu, 0x0, kMagenta + 1, 1, kBlue + 1);
   cef->cd(4);
-  TH1F* hEffEta = (TH1F*)hEtaTracked->Clone("hEffEta");
-  hEffEta->Divide(hEtaTracked, hEtaTrackable, 1., 1., "B");
-  hEffEta->GetYaxis()->SetTitle("Efficiency");
-  hEffEta->SetStats(0);
-  hEffEta->Draw();
+  TH1F* hEffEta5clu = (TH1F*)hEtaTracked5clu->Clone("hEffEta5clu");
+  hEffEta5clu->Divide(hEtaTracked5clu, hEtaTrackable, 1., 1., "B");
+  hEffEta5clu->GetYaxis()->SetTitle("Efficiency");
+  hEffEta5clu->SetStats(0);
+  hEffEta5clu->SetMaximum(1.05);
+  hEffEta5clu->SetMinimum(0.);
+  hEffEta5clu->Draw();
+  TH1F* hEffEtage4clu = (TH1F*)hEtaTrackedge4clu->Clone("hEffEtage4clu");
+  hEffEtage4clu->Divide(hEtaTrackedge4clu, hEtaTrackable, 1., 1., "B");
+  hEffEtage4clu->GetYaxis()->SetTitle("Efficiency");
+  hEffEtage4clu->SetStats(0);
+  hEffEtage4clu->Draw("same");
+  cef->SaveAs("TrackingEfficVT-4and5clu.png");
 
   TCanvas* cpu = new TCanvas("cpu", "Purity", 1400, 800);
-  cpu->Divide(2, 2);
+  cpu->Divide(3, 2);
   cpu->cd(1);
   gPad->SetLogy();
-  superposHistos(hMomAllReco, hMomGoodReco, hMomFakeReco);
+  superposHistos(hMomAllReco5clu, hMomGoodReco5clu, hMomFakeReco5clu);
   cpu->cd(2);
-  hPurityPt->GetYaxis()->SetTitle("Purity");
-  hPurityPt->SetMinimum(0.8);
-  hPurityPt->SetStats(0);
-  hPurityPt->SetLineWidth(2);
-  hPurityPt->Draw();
+  gPad->SetLogy();
+  superposHistos(hMomAllRecoge4clu, hMomGoodRecoge4clu, hMomFakeRecoge4clu);
   cpu->cd(3);
-  superposHistos(hEtaAllReco, hEtaGoodReco, hEtaFakeReco);
+  hPurityMom5clu->GetYaxis()->SetTitle("Purity");
+  hPurityMom5clu->SetMinimum(0.8);
+  hPurityMom5clu->SetStats(0);
+  hPurityMom5clu->SetLineWidth(2);
+  hPurityMom5clu->Draw();
+  hPurityMomge4clu->GetYaxis()->SetTitle("Purity");
+  hPurityMomge4clu->SetMinimum(0.8);
+  hPurityMomge4clu->SetStats(0);
+  hPurityMomge4clu->SetLineWidth(2);
+  hPurityMomge4clu->SetLineColor(kBlue + 1);
+  hPurityMomge4clu->Draw("same");
+  lege->Draw();
   cpu->cd(4);
-  hPurityEta->GetYaxis()->SetTitle("Purity");
-  hPurityEta->SetMinimum(0.8);
-  hPurityEta->SetStats(0);
-  hPurityEta->SetLineWidth(2);
-  hPurityEta->Draw();
+  superposHistos(hEtaAllReco5clu, hEtaGoodReco5clu, hEtaFakeReco5clu);
+  cpu->cd(5);
+  superposHistos(hEtaAllRecoge4clu, hEtaGoodRecoge4clu, hEtaFakeRecoge4clu);
+  cpu->cd(6);
+  hPurityEta5clu->GetYaxis()->SetTitle("Purity");
+  hPurityEta5clu->SetMinimum(0.8);
+  hPurityEta5clu->SetStats(0);
+  hPurityEta5clu->SetLineWidth(2);
+  hPurityEta5clu->Draw();
+  hPurityEtage4clu->GetYaxis()->SetTitle("Purity");
+  hPurityEtage4clu->SetMinimum(0.8);
+  hPurityEtage4clu->SetStats(0);
+  hPurityEtage4clu->SetLineWidth(2);
+  hPurityEtage4clu->SetLineColor(kBlue + 1);
+  hPurityEtage4clu->Draw("same");
+  cpu->SaveAs("TrackingPurityVT-4and5clu.png");
+ 
 
   TCanvas* cip = new TCanvas("cip", "Impact Parameter", 1200, 800);
   cip->Divide(2, 2);
@@ -493,13 +597,21 @@ void plotTracks(const char* dirSimu = ".")
   hEtaGen->Write();
   hMomTrackable->Write();
   hEtaTrackable->Write();
-  hMomTracked->Write();
-  hEtaTracked->Write();
-  hMomAllReco->Write();
-  hMomGoodReco->Write();
-  hMomFakeReco->Write();
-  hEtaAllReco->Write();
-  hEtaGoodReco->Write();
-  hEtaFakeReco->Write();
+  hMomTracked5clu->Write();
+  hEtaTracked5clu->Write();
+  hMomAllReco5clu->Write();
+  hMomGoodReco5clu->Write();
+  hMomFakeReco5clu->Write();
+  hEtaAllReco5clu->Write();
+  hEtaGoodReco5clu->Write();
+  hEtaFakeReco5clu->Write();
+  hMomTrackedge4clu->Write();
+  hEtaTrackedge4clu->Write();
+  hMomAllRecoge4clu->Write();
+  hMomGoodRecoge4clu->Write();
+  hMomFakeRecoge4clu->Write();
+  hEtaAllRecoge4clu->Write();
+  hEtaGoodRecoge4clu->Write();
+  hEtaFakeRecoge4clu->Write();
   outRoot->Close();
 }

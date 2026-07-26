@@ -230,6 +230,11 @@ void NA6PVerTelReconstruction::runTracking()
   clearTracks();
   if (mReadMCTruth)
     mVTTracker->setClusterMCTruth(hCluMCLabelsPtr);
+  if (mEnableTracksWithHoles) {
+    mVTTracker->allowSkipLayer(1);
+    mVTTracker->allowSkipLayer(2);
+    mVTTracker->allowSkipLayer(3);
+  }
   mVTTracker->findTracks(*hClusPtr, mPrimaryVertex);
   mTracks = mVTTracker->getTracks();
   if (mReadMCTruth)

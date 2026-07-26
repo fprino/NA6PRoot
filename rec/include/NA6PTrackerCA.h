@@ -18,6 +18,7 @@
 // #define _CHI2_TUNING_MODE_
 
 #include <string>
+#include <fairlogger/Logger.h>
 #include <Rtypes.h>
 #include "NA6PFastTrackFitter.h"
 #include "NA6PTrack.h"
@@ -119,6 +120,15 @@ class NA6PTrackerCA
                           int minNClusTracks);
   void setMinimumNumberOfClusters(int iter, int minNClusTracks) { mMinNClusTracksCA[iter] = minNClusTracks; }
   void setPID(PID pid) { mPID = pid; }
+  void allowSkipLayer(int lay)
+  {
+    if (std::find(mLayersToSkip.begin(), mLayersToSkip.end(), lay) != mLayersToSkip.end()) {
+      LOGP(warn, "Layer {} already in the list of layers to be skipped", lay);
+    } else {
+      mLayersToSkip.push_back(lay);
+    }
+    std::sort(mLayersToSkip.begin(), mLayersToSkip.end());
+  }
 
   void setMaxPropagationStep(float step) { mTrackFitter->setMaxPropagationStep(step); }
   void configureFromRecoParamVT();
@@ -222,6 +232,15 @@ class NA6PTrackerCA
                           float maxChi2TrClu,
                           int minNClu,
                           float maxChi2NDF);
+  template <typename ClusterType>
+  void doIteration(int jIteration,
+                   const std::vector<ClusterType>& cluArr,
+                   const std::vector<int>& layersToUse,
+                   const std::vector<int>& firstCluPerLay,
+                   const std::vector<int>& lastCluPerLay,
+                   const NA6PVertex* primVert,
+                   int iterationIdToSave);
+
   template <typename T, typename ClusterType>
   void printStats(const std::vector<T>& candidates,
                   const std::vector<ClusterType>& cluArr,
@@ -243,6 +262,12 @@ class NA6PTrackerCA
   float mPrimVertPos[3] = {};
   std::unique_ptr<NA6PFastTrackFitter> mTrackFitter;
   std::vector<bool> mIsClusterUsed = {};
+  std::vector<int> mLayersToSkip = {};
+  std::vector<TrackletCandidate> mFoundTracklets = {};
+  std::vector<CellCandidate> mFoundCells = {};
+  std::vector<std::pair<int, int>> mCellsNeighbours = {};
+  std::vector<TrackCandidate> mTrackCandidates = {};
+  std::vector<TrackFitted> mIterationTracks = {};
   std::vector<TrackFitted> mFinalTracks = {};
   int mMaxSharedClusters = 0;
   bool mUseLinRef = true;

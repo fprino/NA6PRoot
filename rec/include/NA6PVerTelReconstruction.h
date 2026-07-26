@@ -85,6 +85,7 @@ class NA6PVerTelReconstruction : public NA6PReconstruction
   void writeTracks() override;
   void closeTracksOutput() override;
   void runTracking();
+  void setEnableTracksWithHoles(bool opt = true) { mEnableTracksWithHoles = opt; }
 
  private:
   std::vector<NA6PVerTelCluster> mClusters, *hClusPtr = &mClusters;                // vector of clusters
@@ -102,6 +103,7 @@ class NA6PVerTelReconstruction : public NA6PReconstruction
   TTree* mTrackTree = nullptr;                                                     // tree of tracks
   std::unique_ptr<NA6PVertexerTracklets> mVTTrackletVertexer;                      // vertexer
   std::unique_ptr<NA6PTrackerCA> mVTTracker;                                       // tracker
+  bool mEnableTracksWithHoles = false;                                             // flag to enable skipping layers
   NA6PVerTelSegmentation mSegmentation;                                            // segmentation class
   NA6PVerTelDigitizer mDigitizer;                                                  // digitizer class
 

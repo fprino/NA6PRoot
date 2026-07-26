@@ -91,6 +91,7 @@ int main(int argc, char** argv)
     add_option("doDigitsToRecPoints,cl", bpo::value<bool>()->default_value(false), "run digits->clusters");
     add_option("doTrackletVertex,vert", bpo::value<bool>()->default_value(true), "run tracklet vertexer");
     add_option("doVTTracking,vt", bpo::value<bool>()->default_value(true), "run VT tracker");
+    add_option("allowHolesInVTTracks,holesVT", bpo::value<bool>()->default_value(false), "allow holes in VT tracks");
     add_option("doMSTracking,ms", bpo::value<bool>()->default_value(true), "run MS tracker");
     add_option("doMatching,mt", bpo::value<bool>()->default_value(true), "run matching between VT and MS");
     opt_all.add(opt_general).add(opt_hidden);
@@ -131,6 +132,7 @@ int main(int argc, char** argv)
   const bool doMSTracking = vm["doMSTracking"].as<bool>();
   const bool doMatching = vm["doMatching"].as<bool>();
   const bool readMC = vm["readMC"].as<bool>();
+  const bool skipVTlays = vm["allowHolesInVTTracks"].as<bool>();
 
   int firstEv = vm["firstevent"].as<int32_t>();
   int lastEv = vm["lastevent"].as<int32_t>();
@@ -145,6 +147,7 @@ int main(int argc, char** argv)
 
   std::unique_ptr<NA6PVerTelReconstruction> vtrec = std::make_unique<NA6PVerTelReconstruction>();
   vtrec->setReadMCTruth(readMC);
+  vtrec->setEnableTracksWithHoles(skipVTlays);
   std::unique_ptr<NA6PMuonSpecReconstruction> msrec = std::make_unique<NA6PMuonSpecReconstruction>();
   msrec->setReadMCTruth(readMC);
   std::unique_ptr<NA6PMatching> matching = std::make_unique<NA6PMatching>();

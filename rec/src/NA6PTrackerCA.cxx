@@ -3,7 +3,6 @@
 #include <fmt/format.h>
 #include <iostream>
 #include <numeric>
-#include <fairlogger/Logger.h>
 #include <TGeoManager.h>
 #include <TSystem.h>
 #include "Propagator.h"
@@ -184,6 +183,13 @@ void NA6PTrackerCA::printConfiguration() const
               << std::setw(10) << mMaxChi2ndfTracksCA[i]
               << std::setw(8) << mMinNClusTracksCA[i]
               << "\n";
+  }
+  if (!mLayersToSkip.empty()) {
+    std::cout << "Allow skipping of layers: ";
+    for (size_t i = 0; i < mLayersToSkip.size(); ++i) {
+      std::cout << std::setw(3) << mLayersToSkip[i];
+    }
+    std::cout << "\n";
   }
   std::cout << "==============================\n";
 }
@@ -948,6 +954,53 @@ void NA6PTrackerCA::fitAndSelectTracks(const std::vector<TrackCandidate>& trackC
   }
 }
 
+template <typename ClusterType>
+void NA6PTrackerCA::doIteration(int jIteration,
+                                const std::vector<ClusterType>& cluArr,
+                                const std::vector<int>& layersToUse,
+                                const std::vector<int>& firstCluPerLay,
+                                const std::vector<int>& lastCluPerLay,
+                                const NA6PVertex* primVert,
+                                int iterationIdToSave)
+{
+  mFoundTracklets.clear();
+  mFoundCells.clear();
+  mCellsNeighbours.clear();
+  mTrackCandidates.clear();
+  mIterationTracks.clear();
+  computeLayerTracklets(cluArr, layersToUse, firstCluPerLay, lastCluPerLay, mFoundTracklets, mMaxDeltaThetaTrackletsCA[jIteration], mMaxDeltaPhiTrackletsCA[jIteration]);
+  std::vector<int> firstTrklPerLay;
+  std::vector<int> lastTrklPerLay;
+  sortTrackletsByLayerAndIndex(mFoundTracklets, firstTrklPerLay, lastTrklPerLay);
+  if (mVerbose)
+    printStats(mFoundTracklets, cluArr, mFoundCells, "tracklets");
+  //
+  computeLayerCells(mFoundTracklets, layersToUse, firstTrklPerLay, lastTrklPerLay, cluArr, mFoundCells, mMaxDeltaTanLCellsCA[jIteration], mMaxDeltaPhiCellsCA[jIteration], mMaxDeltaPxPzCellsCA[jIteration], mMaxDeltaPyPzCellsCA[jIteration], mMaxChi2TrClCellsCA[jIteration], mMaxChi2ndfCellsCA[jIteration]);
+  std::vector<int> firstCellPerLay;
+  std::vector<int> lastCellPerLay;
+  sortCellsByLayerAndIndex(mFoundCells, firstCellPerLay, lastCellPerLay);
+  if (mVerbose)
+    printStats(mFoundCells, cluArr, mFoundCells, "cells");
+  //
+  findCellsNeighbours(mFoundCells, layersToUse, firstCellPerLay, lastCellPerLay, mCellsNeighbours, cluArr, mMaxChi2TrClCellsCA[jIteration]);
+  if (mVerbose)
+    printStats(mCellsNeighbours, cluArr, mFoundCells, "cell pairs");
+  //
+  findRoads(mCellsNeighbours, mFoundCells, layersToUse, firstCellPerLay, lastCellPerLay, mFoundTracklets, cluArr, mTrackCandidates, mMaxChi2TrClCellsCA[jIteration]);
+  if (mVerbose)
+    printStats(mTrackCandidates, cluArr, mFoundCells, "track candidates");
+  //
+  fitAndSelectTracks(mTrackCandidates, cluArr, mIterationTracks, primVert, mMaxChi2TrClCellsCA[jIteration], mMinNClusTracksCA[jIteration], mMaxChi2ndfTracksCA[jIteration]);
+  if (mVerbose) {
+    printStats(mIterationTracks, cluArr, mFoundCells, "selected tracks");
+    printStats(mIterationTracks, cluArr, mFoundCells, "selected tracks", 5);
+    printStats(mIterationTracks, cluArr, mFoundCells, "selected tracks", 4);
+  }
+  for (auto& track : mIterationTracks) {
+    track.trackFitFast.setCAIteration(iterationIdToSave);
+  }
+  mFinalTracks.insert(mFinalTracks.end(), mIterationTracks.begin(), mIterationTracks.end());
+}
 //______________________________________________________________________
 
 template <typename ClusterType>
@@ -989,11 +1042,6 @@ void NA6PTrackerCA::findTracks(std::vector<ClusterType>& cluArr,
   std::vector<int> firstCluPerLay;
   std::vector<int> lastCluPerLay;
   sortClustersByLayerAndEta(cluArr, firstCluPerLay, lastCluPerLay);
-  std::vector<TrackletCandidate> foundTracklets;
-  std::vector<CellCandidate> foundCells;
-  std::vector<std::pair<int, int>> cellsNeighbours;
-  std::vector<TrackCandidate> trackCandidates;
-  std::vector<TrackFitted> iterationTracks;
   std::vector<int> layersToUse(mNLayers);
   std::iota(layersToUse.begin(), layersToUse.end(), 0);
 
@@ -1002,43 +1050,35 @@ void NA6PTrackerCA::findTracks(std::vector<ClusterType>& cluArr,
     if (mVerbose) {
       LOGP(info, " -> Iteration {} <-", jIteration);
     }
-    foundTracklets.clear();
-    foundCells.clear();
-    cellsNeighbours.clear();
-    trackCandidates.clear();
-    iterationTracks.clear();
-    computeLayerTracklets(cluArr, layersToUse, firstCluPerLay, lastCluPerLay, foundTracklets, mMaxDeltaThetaTrackletsCA[jIteration], mMaxDeltaPhiTrackletsCA[jIteration]);
-    std::vector<int> firstTrklPerLay;
-    std::vector<int> lastTrklPerLay;
-    sortTrackletsByLayerAndIndex(foundTracklets, firstTrklPerLay, lastTrklPerLay);
+    doIteration(jIteration, cluArr, layersToUse, firstCluPerLay, lastCluPerLay, primVert, jIteration);
     if (mVerbose)
-      printStats(foundTracklets, cluArr, foundCells, "tracklets");
-    //
-    computeLayerCells(foundTracklets, layersToUse, firstTrklPerLay, lastTrklPerLay, cluArr, foundCells, mMaxDeltaTanLCellsCA[jIteration], mMaxDeltaPhiCellsCA[jIteration], mMaxDeltaPxPzCellsCA[jIteration], mMaxDeltaPyPzCellsCA[jIteration], mMaxChi2TrClCellsCA[jIteration], mMaxChi2ndfCellsCA[jIteration]);
-    std::vector<int> firstCellPerLay;
-    std::vector<int> lastCellPerLay;
-    sortCellsByLayerAndIndex(foundCells, firstCellPerLay, lastCellPerLay);
-    if (mVerbose)
-      printStats(foundCells, cluArr, foundCells, "cells");
-    //
-    findCellsNeighbours(foundCells, layersToUse, firstCellPerLay, lastCellPerLay, cellsNeighbours, cluArr, mMaxChi2TrClCellsCA[jIteration]);
-    if (mVerbose)
-      printStats(cellsNeighbours, cluArr, foundCells, "cell pairs");
-    //
-    findRoads(cellsNeighbours, foundCells, layersToUse, firstCellPerLay, lastCellPerLay, foundTracklets, cluArr, trackCandidates, mMaxChi2TrClCellsCA[jIteration]);
-    if (mVerbose)
-      printStats(trackCandidates, cluArr, foundCells, "track candidates");
-    //
-    fitAndSelectTracks(trackCandidates, cluArr, iterationTracks, primVert, mMaxChi2TrClCellsCA[jIteration], mMinNClusTracksCA[jIteration], mMaxChi2ndfTracksCA[jIteration]);
-    if (mVerbose) {
-      printStats(iterationTracks, cluArr, foundCells, "selected tracks");
-      printStats(iterationTracks, cluArr, foundCells, "selected tracks", 5);
-      printStats(iterationTracks, cluArr, foundCells, "selected tracks", 4);
+      LOGP(info, "Iteration {}: current number of tracks = {}", jIteration, mFinalTracks.size());
+  }
+  if (!mLayersToSkip.empty()) {
+    // last iteration: after running with all layers, run also with holes in selected layers
+    int jIteration = mNIterationsCA - 1;
+    mCurIteration = jIteration + 1; // debug-stream tag: same cuts as last nominal iteration, but with holes
+    int backupMinNClus = mMinNClusTracksCA[jIteration];
+    for (size_t jStep = 0; jStep < mLayersToSkip.size(); ++jStep) {
+      layersToUse.clear();
+      for (int jLay = 0; jLay < mNLayers; ++jLay) {
+        if (jLay != mLayersToSkip[jStep])
+          layersToUse.push_back(jLay);
+      }
+      if (mMinNClusTracksCA[jIteration] > static_cast<int>(layersToUse.size()))
+        mMinNClusTracksCA[jIteration] = layersToUse.size();
+      if (mVerbose) {
+        std::string laysForPrint = "";
+        for (int j = 0; j < layersToUse.size(); ++j) {
+          laysForPrint.append(fmt::format("{} ", layersToUse[j]));
+        }
+        LOGP(info, "Skipping layer step {}, {} layers used: {}", jStep, layersToUse.size(), laysForPrint.c_str());
+      }
+      doIteration(jIteration, cluArr, layersToUse, firstCluPerLay, lastCluPerLay, primVert, jIteration + 1);
+      if (mVerbose)
+        LOGP(info, "Iteration {}  Step {}: current number of tracks = {}", jIteration, jStep, mFinalTracks.size());
     }
-    for (auto& track : iterationTracks) {
-      track.trackFitFast.setCAIteration(jIteration);
-    }
-    mFinalTracks.insert(mFinalTracks.end(), iterationTracks.begin(), iterationTracks.end());
+    mMinNClusTracksCA[jIteration] = backupMinNClus;
   }
 }
 

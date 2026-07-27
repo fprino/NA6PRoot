@@ -310,13 +310,13 @@ void plotVerTelTracks(const char* dirSimu = ".")
       hPurityMomge4clu->SetBinError(iBin, ep);
     }
   }
-  TH1F* hPurityEta5clu = (TH1F*)hMomGoodReco5clu->Clone("hPurityEta5clu");
+  TH1F* hPurityEta5clu = (TH1F*)hEtaGoodReco5clu->Clone("hPurityEta5clu");
   hPurityEta5clu->GetYaxis()->SetTitle("purity");
-  TH1F* hPurityEtage4clu = (TH1F*)hMomGoodRecoge4clu->Clone("hPurityEtage4clu");
+  TH1F* hPurityEtage4clu = (TH1F*)hEtaGoodRecoge4clu->Clone("hPurityEtage4clu");
   hPurityEtage4clu->GetYaxis()->SetTitle("purity");
-  for (int iBin = 1; iBin <= hMomGoodReco5clu->GetNbinsX(); iBin++) {
-    double cg5 = hMomGoodReco5clu->GetBinContent(iBin);
-    double ct5 = hMomAllReco5clu->GetBinContent(iBin);
+  for (int iBin = 1; iBin <= hEtaGoodReco5clu->GetNbinsX(); iBin++) {
+    double cg5 = hEtaGoodReco5clu->GetBinContent(iBin);
+    double ct5 = hEtaAllReco5clu->GetBinContent(iBin);
     if (ct5 == 0) {
       hPurityEta5clu->SetBinContent(iBin, 0.);
       hPurityEta5clu->SetBinError(iBin, 0.);
@@ -326,8 +326,8 @@ void plotVerTelTracks(const char* dirSimu = ".")
       hPurityEta5clu->SetBinContent(iBin, p);
       hPurityEta5clu->SetBinError(iBin, ep);
     }
-    double cg4 = hMomGoodRecoge4clu->GetBinContent(iBin);
-    double ct4 = hMomAllRecoge4clu->GetBinContent(iBin);
+    double cg4 = hEtaGoodRecoge4clu->GetBinContent(iBin);
+    double ct4 = hEtaAllRecoge4clu->GetBinContent(iBin);
     if (ct4 == 0) {
       hPurityEtage4clu->SetBinContent(iBin, 0.);
       hPurityEtage4clu->SetBinError(iBin, 0.);
@@ -392,7 +392,7 @@ void plotVerTelTracks(const char* dirSimu = ".")
   hEffMomge4clu->GetYaxis()->SetTitle("Efficiency");
   hEffMomge4clu->SetStats(0);
   hEffMomge4clu->Draw("same");
-  TLegend *lege = new TLegend(0.3, 0.15, 0.85, 0.3);
+  TLegend* lege = new TLegend(0.3, 0.15, 0.85, 0.3);
   lege->SetMargin(0.1);
   lege->AddEntry(hEffMom5clu, "5 cluster tracks", "L")->SetTextColor(hEffMom5clu->GetLineColor());
   lege->AddEntry(hEffMomge4clu, ">= 4 cluster tracks", "L")->SetTextColor(hEffMomge4clu->GetLineColor());
@@ -452,7 +452,6 @@ void plotVerTelTracks(const char* dirSimu = ".")
   hPurityEtage4clu->SetLineColor(kBlue + 1);
   hPurityEtage4clu->Draw("same");
   cpu->SaveAs("TrackingPurityVT-4and5clu.png");
- 
 
   TCanvas* cip = new TCanvas("cip", "Impact Parameter", 1200, 800);
   cip->Divide(2, 2);

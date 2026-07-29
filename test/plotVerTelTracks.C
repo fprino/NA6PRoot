@@ -13,7 +13,10 @@
 #include "MagneticField.h"
 #include "Propagator.h"
 #include "NA6PVerTelHit.h"
+#include "NA6PVerTelCluster.h"
+#include "NA6PMCTruthContainer.h"
 #include "NA6PMCComposedLabel.h"
+
 #endif
 
 void fillMeanAndRms(TH2F* h2d, TH1F* hMean, TH1F* hRms, TH1F* hSig)
@@ -102,8 +105,13 @@ void superposHistos(TH1* h1, TH1* h2, TH1* h3, TH1* h4 = nullptr, int col1 = 1, 
   gPad->Modified();
 }
 
-void plotVerTelTracks(const char* dirSimu = ".")
+void plotVerTelTracks(const char* dirSimu = ".",
+                      int optForTrackable = 0)
 {
+  // optForTrackable = 0: use hits to define trackable particles
+  // optForTrackable = 1: use clusters to define trackable particles
+  // optForTrackable = 2: use generated particles in acceptance to define trackable particles
+
   auto magField = new MagneticField();
   magField->loadField();
   magField->setAsGlobalField();
@@ -126,6 +134,13 @@ void plotVerTelTracks(const char* dirSimu = ".")
   TTree* th = (TTree*)fh->Get("hitsVerTel");
   std::vector<NA6PVerTelHit> vtHits, *vtHitsPtr = &vtHits;
   th->SetBranchAddress("VerTel", &vtHitsPtr);
+
+  TFile* fc = TFile::Open(Form("%s/ClustersVerTel.root", dirSimu));
+  TTree* tc = (TTree*)fc->Get("clustersVerTel");
+  std::vector<NA6PVerTelCluster> vtClusters, *vtClustersPtr = &vtClusters;
+  NA6PMCTruthContainer vtCluMCLabels, *vtCluMCLabelsPtr = &vtCluMCLabels;
+  tc->SetBranchAddress("VerTel", &vtClustersPtr);
+  tc->SetBranchAddress("VerTelMCTruth", &vtCluMCLabelsPtr);
 
   int nMomBins = 20;
   double maxP = 10.;
@@ -167,14 +182,18 @@ void plotVerTelTracks(const char* dirSimu = ".")
     mcTree->GetEvent(jEv);
     trTree->GetEvent(jEv);
     th->GetEvent(jEv);
+    tc->GetEvent(jEv);
+
     int nPart = mcArr->size();
     int nTracks = trArr->size();
     int nHits = vtHits.size();
-    printf("Event %d particles = %d tracks = %d\n", jEv, nPart, nTracks);
+    int nClusters = vtClusters.size();
+    int nCluMClabels = vtCluMCLabels.getNElements();
+    printf("Event %d particles = %d hits = %d clusters = %d cluMClabels = %d\n", jEv, nPart, nHits, nClusters, nCluMClabels);
     double xvert = 0;
     double yvert = 0;
     double zvert = 0;
-
+    std::vector<bool> isInAcc(nPart, false);
     for (int jp = 0; jp < nPart; jp++) {
       auto curPart = mcArr->at(jp);
       if (curPart.IsPrimary()) {
@@ -196,22 +215,57 @@ void plotVerTelTracks(const char* dirSimu = ".")
       double phiPart = curPart.Phi();
       double thetaPart = std::acos(pzPart / momPart);
       double etaPart = -std::log(std::tan(thetaPart / 2.));
-      if (zOrig < 7 && zDecay > 40 && etaPart > 1 && etaPart < 5) {
+      if (zOrig < 14 && zDecay > 35 && etaPart > 1 && etaPart < 5) {
+        isInAcc[jp] = true;
         hMomGen->Fill(momPart);
         hEtaGen->Fill(etaPart);
-      }
-      int maskHits = 0;
-      for (int jHit = 0; jHit < nHits; ++jHit) {
-        const auto& hit = vtHits.at(jHit);
-        int idPart = hit.getTrackID();
-        if (idPart == jp) {
-          int nLay = hit.getDetectorID() / 4;
-          maskHits |= (1 << nLay);
+        if (optForTrackable == 2) {
+          hMomTrackable->Fill(momPart);
+          hEtaTrackable->Fill(etaPart);
         }
       }
-      if (maskHits == 31 || maskHits == 30 || maskHits == 15) {
-        hMomTrackable->Fill(momPart);
-        hEtaTrackable->Fill(etaPart);
+      if (optForTrackable == 0) {
+        int maskHits = 0;
+        for (int jHit = 0; jHit < nHits; ++jHit) {
+          const auto& hit = vtHits.at(jHit);
+          int idPart = hit.getTrackID();
+          if (idPart == jp) {
+            int nLay = hit.getDetectorID() / 4;
+            if (nLay < 0 || nLay >= 5) {
+              printf("ERROR wrong layer %d for hit %d\n", nLay, jHit);
+              continue;
+            }
+            maskHits |= (1 << nLay);
+          }
+        }
+        if (maskHits == 31 || maskHits == 30 || maskHits == 15) {
+          hMomTrackable->Fill(momPart);
+          hEtaTrackable->Fill(etaPart);
+        }
+      } else if (optForTrackable == 1) {
+        uint maskClus = 0;
+        for (int jClu = 0; jClu < nClusters; ++jClu) {
+          const auto& clu = vtClusters.at(jClu);
+          int nLay = clu.getLayer();
+          if (nLay < 0 || nLay >= 5) {
+            printf("ERROR wrong layer %d for cluster %d\n", nLay, jClu);
+            continue;
+          }
+          std::span labels = vtCluMCLabels.getLabels(jClu);
+          int nLabels = labels.size();
+          for (int jLab = 0; jLab < nLabels; ++jLab) {
+            NA6PMCComposedLabel lbl = labels[jLab];
+            int idPart = lbl.getTrackID();
+            if (idPart == jp) {
+              maskClus |= (1 << nLay);
+              break;
+            }
+          }
+        }
+        if (std::popcount(maskClus) >= 4) {
+          hMomTrackable->Fill(momPart);
+          hEtaTrackable->Fill(etaPart);
+        }
       }
     }
     for (int jTr = 0; jTr < nTracks; ++jTr) {
@@ -258,6 +312,8 @@ void plotVerTelTracks(const char* dirSimu = ".")
           hEtaFakeReco5clu->Fill(etaReco);
         }
       }
+      if (optForTrackable == 2 && isInAcc[mcLabel] == false)
+        continue;
 
       TParticle part = mcArr->at(mcLabel);
       double pxPart = part.Px();
@@ -378,7 +434,7 @@ void plotVerTelTracks(const char* dirSimu = ".")
   TCanvas* cef = new TCanvas("cef", "Efficiency", 1400, 800);
   cef->Divide(2, 2);
   cef->cd(1);
-  superposHistos(hMomTrackable, hMomTracked5clu, hMomTrackedge4clu, 0x0, kMagenta + 1, 1, kBlue + 1);
+  superposHistos(hMomGen, hMomTrackable, hMomTracked5clu, hMomTrackedge4clu, kGray + 1, kMagenta + 1, 1, kBlue + 1);
   cef->cd(2);
   TH1F* hEffMom5clu = (TH1F*)hMomTracked5clu->Clone("hEffMom5clu");
   hEffMom5clu->Divide(hMomTracked5clu, hMomTrackable, 1., 1., "B");
@@ -398,7 +454,7 @@ void plotVerTelTracks(const char* dirSimu = ".")
   lege->AddEntry(hEffMomge4clu, ">= 4 cluster tracks", "L")->SetTextColor(hEffMomge4clu->GetLineColor());
   lege->Draw();
   cef->cd(3);
-  superposHistos(hEtaTrackable, hEtaTracked5clu, hEtaTrackedge4clu, 0x0, kMagenta + 1, 1, kBlue + 1);
+  superposHistos(hEtaGen, hEtaTrackable, hEtaTracked5clu, hEtaTrackedge4clu, kGray + 1, kMagenta + 1, 1, kBlue + 1);
   cef->cd(4);
   TH1F* hEffEta5clu = (TH1F*)hEtaTracked5clu->Clone("hEffEta5clu");
   hEffEta5clu->Divide(hEtaTracked5clu, hEtaTrackable, 1., 1., "B");

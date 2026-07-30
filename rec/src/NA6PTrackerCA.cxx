@@ -266,6 +266,64 @@ void NA6PTrackerCA::sortClustersByLayerAndEta(std::vector<ClusterType>& cluArr,
 
 //______________________________________________________________________
 
+template <typename ClusterType>
+void NA6PTrackerCA::sortClustersByLayerAndY(std::vector<ClusterType>& cluArr,
+                                            std::vector<int>& firstIndex,
+                                            std::vector<int>& lastIndex)
+{
+
+  // Count clusters per layer for all layers
+  int maxLayers = 25;
+  std::vector<int> count(maxLayers, 0);
+  std::vector<double> zSum(maxLayers, 0.0);
+  for (const auto& clu : cluArr) {
+    int jLay = clu.getLayer();
+    count[jLay]++;
+    zSum[jLay] += clu.getZ();
+  }
+  // Compute starting offset for each layer
+  std::vector<int> firstAll(maxLayers);
+  firstAll[0] = 0;
+  for (int i = 1; i < maxLayers; ++i) {
+    firstAll[i] = firstAll[i - 1] + count[i - 1];
+  }
+
+  // Fill firstIndex, lastIndex, and mLayersZ only for selected layers
+  mLayersZ.assign(mNLayers, 0.f);
+  firstIndex.resize(mNLayers);
+  lastIndex.resize(mNLayers);
+  for (int j = 0; j < mNLayers; ++j) {
+    int jLay = mLayerStart + j;
+    firstIndex[j] = firstAll[jLay];
+    lastIndex[j] = firstAll[jLay] + count[jLay];
+    if (count[jLay] > 0) {
+      mLayersZ[j] = static_cast<float>(zSum[jLay] / count[jLay]);
+    }
+  }
+
+  // Create a reordered vector based on layer grouping
+  std::vector<int> countReord = firstAll;
+  std::vector<ClusterType> reordered(cluArr.size());
+  for (const auto& clu : cluArr) {
+    int jLay = clu.getLayer();
+    if (jLay >= 0 && jLay < maxLayers)
+      reordered[countReord[jLay]++] = clu;
+  }
+  cluArr = std::move(reordered);
+  // sort by y coordinate (non bending direction) within each layer
+  for (int jLay = 0; jLay < maxLayers; jLay++) {
+    if (count[jLay] == 0)
+      continue;
+    auto first = cluArr.begin() + firstAll[jLay];
+    auto last = cluArr.begin() + firstAll[jLay] + count[jLay];
+    std::sort(first, last, [](const ClusterType& a, const ClusterType& b) {
+      return a.getY() < b.getY();
+    });
+  }
+}
+
+//______________________________________________________________________
+
 void NA6PTrackerCA::sortTrackletsByLayerAndIndex(std::vector<TrackletCandidate>& tracklets,
                                                  std::vector<int>& firstIndex,
                                                  std::vector<int>& lastIndex)

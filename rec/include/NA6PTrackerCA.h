@@ -158,10 +158,6 @@ class NA6PTrackerCA
  protected:
   // methods used in tracking
   template <typename ClusterType>
-  void sortClustersByLayerAndEta(std::vector<ClusterType>& cluArr,
-                                 std::vector<int>& firstIndex,
-                                 std::vector<int>& lastIndex);
-  template <typename ClusterType>
   void sortClustersByLayerAndY(std::vector<ClusterType>& cluArr,
                                std::vector<int>& firstIndex,
                                std::vector<int>& lastIndex);

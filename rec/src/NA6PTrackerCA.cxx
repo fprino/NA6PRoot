@@ -102,7 +102,7 @@ void NA6PTrackerCA::configureFromRecoParamVT()
   setUseLinRef(param.useLinRefVT);
   mTrackFitter->setSeedImprovePrec(param.seedImprovePrecVT);
   mTrackFitter->setPID(mPID);
-
+  mTrackFitter->setMaxChi2VertConstr(param.vtMaxChi2VertexConstrain);
   for (int jIter = 0; jIter < mNIterationsCA; ++jIter) {
     setIterationParams(jIter,
                        param.vtMaxDeltaThetaTrackletsCA[jIter],
@@ -135,6 +135,7 @@ void NA6PTrackerCA::configureFromRecoParamMS()
   setTrackletCuts(param.msMaxDeltaThetaTrackletMID, param.msMaxDeltaPhiTrackletMID);
   mTrackFitter->setSeedImprovePrec(param.seedImprovePrecMS);
   mTrackFitter->setPID(mPID);
+  mTrackFitter->setMaxChi2VertConstr(param.msMaxChi2VertexConstrain);
 
   for (int jIter = 0; jIter < mNIterationsCA; ++jIter) {
     setIterationParams(jIter,

@@ -55,7 +55,7 @@ bool NA6PFastTrackFitter::constrainTrackToVertex(NA6PTrack& trc, const NA6PVerte
   vClu.setErr(sxx, sxy, syy);
   auto chi2 = t.getPredictedChi2(vClu);
   mChi2Buffer.push_back(chi2);
-  if ((mMaxChi2Cl > 0.f && chi2 > mMaxChi2Cl) || !t.update(vClu)) {
+  if ((mMaxChi2VertConstr > 0.f && chi2 > mMaxChi2VertConstr) || !t.update(vClu)) {
     trc.getVertexConstrainedParam().invalidate();
     return false;
   }

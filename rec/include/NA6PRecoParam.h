@@ -46,6 +46,7 @@ struct NA6PRecoParam : public na6p::conf::ConfigurableParamHelper<NA6PRecoParam>
   bool vtDoInwardRefit = false;
   bool vtPropagateTracksToPV = true;
   bool vtDoConstrainedTrack = false;
+  float vtMaxChi2VertexConstrain = 20.;
   int vtNIterationsTrackerCA = 2;
   float seedImprovePrecVT = 0.02;
   float vtMaxDeltaThetaTrackletsCA[MaxIterationsTrackerCA] = {0.04, 0.1, 0.15, 0.3, 999.0, 999.0, 999.0, 999.0, 999.0, 999.0};
@@ -82,6 +83,7 @@ struct NA6PRecoParam : public na6p::conf::ConfigurableParamHelper<NA6PRecoParam>
   float msMaxChi2ndfTracksCA[MaxIterationsTrackerCA] = {5., 5., 999.0, 999.0, 999.0, 999.0, 999.0, 999.0, 999.0, 999.0};
   int msMinNClusTracksCA[MaxIterationsTrackerCA] = {6, 6, 0, 0, 0, 0, 0, 0, 0};
   bool msDoConstrainedTrack = false;
+  float msMaxChi2VertexConstrain = 30.;
 
   // Matching parameters
   bool mtDoOutwardInwardFit = true;

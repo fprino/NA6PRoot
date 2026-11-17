@@ -43,6 +43,7 @@ class NA6PFastTrackFitter
 
   // setters for configurable parameters
   void setMaxChi2Cl(float v = 10) { mMaxChi2Cl = v; }
+  void setMaxChi2VertConstr(float v = 10) { mMaxChi2VertConstr = v; }
 
   void setParticleHypothesisPDG(int pdg) { mPID.setFromPDG(pdg); }
   void setPID(PID pid) { mPID = pid; }
@@ -123,6 +124,7 @@ class NA6PFastTrackFitter
  protected:
   float mMostProbableP = 5.f;        // most probable momentum to set at 0 field
   float mMaxChi2Cl = -10.;           // max cluster-track chi2
+  float mMaxChi2VertConstr = -10.;   // machi chi2 for vertex constrain
   float mSeedImprovePrec = 0.01;     // try to improve fast seed precision if estimated error exceeds this (if >0)
   int mSeedOption = kInMidOutAsSeed; // seed option (see enum)
 

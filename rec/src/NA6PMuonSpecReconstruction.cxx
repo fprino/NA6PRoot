@@ -241,6 +241,7 @@ void NA6PMuonSpecReconstruction::runMSTrackMIDTrackletMatching()
   int nTrklets = trkltsMID.size();
   NA6PFastTrackFitter* fitter = mMSTracker->getTrackFitter();
   fitter->setMaxChi2Cl(param.msMaxChi2TrClMSTrackletMID);
+  fitter->setMaxChi2VertConstr(param.msMaxChi2VertexConstrain);
 
   // create lookup table of cluster indices
   std::vector<int> clusterLookup(clusters.size(), -1);

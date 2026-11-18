@@ -40,7 +40,7 @@ class NA6PTrackerCA;
 class NA6PVerTelReconstruction : public NA6PReconstruction
 {
  public:
-  NA6PVerTelReconstruction();
+  NA6PVerTelReconstruction(bool init = true);
   ~NA6PVerTelReconstruction() override;
 
   bool initAll();

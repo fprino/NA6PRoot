@@ -165,7 +165,7 @@ int main(int argc, char** argv)
 
   std::unique_ptr<NA6PVerTelReconstruction> vtrec;
   if (doHitsToRecPoints || doDigitsToRecPoints || doTrackletVertex || doVTTracking) {
-    vtrec = std::make_unique<NA6PVerTelReconstruction>();
+    vtrec = std::make_unique<NA6PVerTelReconstruction>(false);
     vtrec->setReadMCTruth(readMC);
     vtrec->setEnableTracksWithHoles(skipVTlays);
   }
@@ -174,7 +174,7 @@ int main(int argc, char** argv)
     msrec = std::make_unique<NA6PMuonSpecReconstruction>();
     msrec->setReadMCTruth(readMC);
   }
-  std::unique_ptr<NA6PMatching> matching = std::make_unique<NA6PMatching>();
+  std::unique_ptr<NA6PMatching> matching = std::make_unique<NA6PMatching>(false);
 
   const bool needsMCKine = doTrackletVertex || doVTTracking || doMSTracking || doMatching || rejectEleInMS;
   std::unique_ptr<TreeFromFile> tfKine;

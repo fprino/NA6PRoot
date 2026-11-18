@@ -10,11 +10,12 @@
 #include "NA6PVertexerTracklets.h"
 #include "NA6PVerTelReconstruction.h"
 
-NA6PVerTelReconstruction::NA6PVerTelReconstruction() : NA6PReconstruction("VerTel")
+NA6PVerTelReconstruction::NA6PVerTelReconstruction(bool init) : NA6PReconstruction("VerTel")
 {
-  initAll();
   mDigitizer.initGeometry();
   mClusterizer.initGeometry();
+  if (init)
+    initAll();
 }
 
 NA6PVerTelReconstruction::~NA6PVerTelReconstruction()

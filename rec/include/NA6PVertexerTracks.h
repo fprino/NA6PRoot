@@ -156,7 +156,7 @@ class NA6PVertexerTracks
   std::vector<TrackVF> mTracksPool;         ///< tracks in internal representation used for vertexing
   float mBeamX = 0.;                        ///< beam transverse coordinates
   float mBeamY = 0.;                        ///< beam transverse coordinates
-  float mMaxDCA = 0.05;                     ///< cut on DCA of track to beam line (cm)
+  float mMaxDCA = 0.15;                     ///< cut on DCA of track to beam line (cm)
   float mZMin = -20.0;                      ///< z range, min, cm
   float mZMax = 5.;                         ///< z range, max, cm
   int mNBinsForPeakFind = 250;              ///< 0.1 cm per bin
@@ -168,6 +168,7 @@ class NA6PVertexerTracks
   static constexpr float kAlmost0F = 1e-7f; ///< tiny float
   //  static constexpr float kScaleStability = 0.1f;  ///< tolerance for scale change
   static constexpr float kDefTukey = 5.0f;        ///< def.value for Tukey constant
+  static constexpr float kPCATolerance = 0.1;     ///< numerical PCA convergence tolerance (cm)
   float mTukey2I = 1.f / (kDefTukey * kDefTukey); ///< 1./[Tukey parameter]^2
   float mInitScaleSigma2 = 10.f;                  ///< scaling parameter on top of Tukey param
   int mMaxIterations = 20;                        ///< max iterations per vertex fit

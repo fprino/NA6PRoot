@@ -3,6 +3,7 @@
 #include "Math/SMatrix.h"
 #include "Math/SVector.h"
 #include "Propagator.h"
+#include "NA6PRecoParam.h"
 #include "NA6PVertexerTracks.h"
 
 ClassImp(NA6PVertexerTracks)
@@ -84,9 +85,13 @@ void NA6PVertexerTracks::createTracksPool(const std::vector<NA6PTrack>& tracks)
   auto prop = Propagator::Instance();
   for (uint32_t i = 0; i < ntGlo; i++) {
     NA6PTrackParCov trc = tracks[i];
-    if (!prop->propagatePCAToLine(trc, mBeamX, mBeamY, mMaxDCA)) {
+    if (!prop->propagatePCAToLine(trc, mBeamX, mBeamY, kPCATolerance)) {
       continue;
     }
+    const float dx = trc.getX() - mBeamX;
+    const float dy = trc.getY() - mBeamY;
+    if (dx * dx + dy * dy > mMaxDCA * mMaxDCA)
+      continue;
     auto& tvf = mTracksPool.emplace_back(trc, i, mBeamX, mBeamY);
     if (!tvf.isValid()) {
       mTracksPool.pop_back(); // discard bad track

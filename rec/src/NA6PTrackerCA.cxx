@@ -401,7 +401,7 @@ void NA6PTrackerCA::computeLayerTracklets(const std::vector<ClusterType>& cluArr
                                           return clu.getY() < y2Min;
                                         });
 
-      auto upper = std::partition_point(layerBegin, layerEnd,
+      auto upper = std::partition_point(lower, layerEnd,
                                         [y2Max](const ClusterType& clu) {
                                           return clu.getY() <= y2Max;
                                         });
@@ -474,7 +474,7 @@ void NA6PTrackerCA::computeLayerCells(const std::vector<TrackletCandidate>& trac
                                         [nextLayerClusterIndex](const TrackletCandidate& trkl) {
                                           return trkl.firstClusterIndex < nextLayerClusterIndex;
                                         });
-      auto upper = std::partition_point(layerBegin, layerEnd,
+      auto upper = std::partition_point(lower, layerEnd,
                                         [nextLayerClusterIndex](const TrackletCandidate& trkl) {
                                           return trkl.firstClusterIndex <= nextLayerClusterIndex;
                                         });
@@ -494,7 +494,6 @@ void NA6PTrackerCA::computeLayerCells(const std::vector<TrackletCandidate>& trac
         if (deltapypz < deltaPyPzMax && deltapxpz < deltaPxPzMax && deltaTanLambda < deltaTanLMax && std::abs(dphi) < deltaPhiMax) {
           std::array<int, 3> cluIDs = {trkl1.firstClusterIndex, trkl2.firstClusterIndex, trkl2.secondClusterIndex};
           NA6PTrack fitTrackFast;
-          //   genfit::Track fitTrack;
           float chi = fitTrackPointsFast(std::vector<int>(cluIDs.begin(), cluIDs.end()), cluArr, fitTrackFast, maxChi2TrClu, maxChi2NDF);
           if (chi >= 0) {
 #ifdef _CHI2_TUNING_MODE_
@@ -520,17 +519,25 @@ void NA6PTrackerCA::computeLayerCells(const std::vector<TrackletCandidate>& trac
 }
 
 //______________________________________________________________________
-template <typename ClusterType>
-float NA6PTrackerCA::computeTrackToClusterChi2(const NA6PTrackParCov& track, const ClusterType& clu)
+const NA6PTrackParCov* NA6PTrackerCA::getPropagatedCellTrack(CellCandidate& cell, float z)
 {
-  NA6PTrackParCov t{track};
-  if (!Propagator::Instance()->propagateToZ(t, clu.getZ())) {
-    if (mVerbose) {
-      LOGP(info, "DBG trk-cl chi2 fail: propagate to z={} state={}", clu.getZ(), track.asString());
+  for (int i = cell.firstPropagatedTrack; i >= 0; i = mPropagatedCellTracks[i].next) {
+    const auto& cached = mPropagatedCellTracks[i].track;
+    if (cached.getZ() == z) {
+      return &cached;
     }
-    return 1e99;
   }
-  return t.getPredictedChi2(clu);
+  // If not found, propagate the track to the requested z
+  NA6PTrackParCov propagated{cell.trackFitFast};
+  if (!Propagator::Instance()->propagateToZ(propagated, z)) {
+    if (mVerbose) {
+      LOGP(info, "DBG trk-cl chi2 fail: propagate to z={} state={}", z, propagated.asString());
+    }
+    return nullptr;
+  }
+  mPropagatedCellTracks.push_back({propagated, cell.firstPropagatedTrack});
+  cell.firstPropagatedTrack = mPropagatedCellTracks.size() - 1;
+  return &mPropagatedCellTracks.back().track;
 }
 
 //______________________________________________________________________
@@ -577,7 +584,7 @@ float NA6PTrackerCA::fitTrackPointsFast(const std::vector<int>& cluIDs,
 //______________________________________________________________________
 
 template <typename ClusterType>
-void NA6PTrackerCA::findCellsNeighbours(const std::vector<CellCandidate>& cells,
+void NA6PTrackerCA::findCellsNeighbours(std::vector<CellCandidate>& cells,
                                         const std::vector<int>& layers,
                                         const std::vector<int>& firstIndex,
                                         const std::vector<int>& lastIndex,
@@ -602,11 +609,11 @@ void NA6PTrackerCA::findCellsNeighbours(const std::vector<CellCandidate>& cells,
       const int nextLayerTrackletIndex = cell1.secondTrackletIndex;
       auto lower = std::partition_point(layerBegin, layerEnd,
                                         [&](const CellCandidate& c) { return c.firstTrackletIndex < nextLayerTrackletIndex; });
-      auto upper = std::partition_point(layerBegin, layerEnd,
+      auto upper = std::partition_point(lower, layerEnd,
                                         [&](const CellCandidate& c) { return c.firstTrackletIndex <= nextLayerTrackletIndex; });
       for (auto it = lower; it != upper; ++it) {
         int jCe2 = it - cells.begin();
-        const CellCandidate& cell2 = *it;
+        CellCandidate& cell2 = *it;
         if (cell2.firstTrackletIndex != nextLayerTrackletIndex)
           continue;
         if (cell1.cluIDs[1] != cell2.cluIDs[0] || cell1.cluIDs[2] != cell2.cluIDs[1]) {
@@ -617,20 +624,18 @@ void NA6PTrackerCA::findCellsNeighbours(const std::vector<CellCandidate>& cells,
         // Check compatibility of cells via track-cluster chi2
         // Check done only for the inward propagation of the outer cell
         //   because we have the track parameterization at the innermost point of each cell
-        // int jClu2 = cell2.cluIDs[2];
-        // const auto& clu2 = cluArr[jClu2];
-        // float cluchi2a = computeTrackToClusterChi2(cell1.trackFitFast, clu2);
-        // if (cluchi2a > maxChi2TrClu)
-        //   continue;
-
         int jClu0 = cell1.cluIDs[0];
         const auto& clu0 = cluArr[jClu0];
-        float cluchi2b = computeTrackToClusterChi2(cell2.trackFitFast, clu0);
+        const auto* propagated = getPropagatedCellTrack(cell2, clu0.getZ());
+        if (!propagated) {
+          continue;
+        }
+        float cluchi2b = propagated->getPredictedChi2(clu0);
 #ifdef _CHI2_TUNING_MODE_
         auto mcTruth = getTrackMCTruthStatus(cell2.cluIDs, cluArr);
         if (mcTruth.isSet() && !mcTruth.isFake()) {
           (*dbgStream) << "chiNb"
-                       << "iter=" << mCurIteration << "trc=" << ((NA6PTrackParCov&)cell2.trackFitFast) << "trackNcl=" << cell2.trackFitFast.getNHits() << "trackChi2=" << cell2.trackFitFast.getChi2() << "chi2cl=" << cluchi2b << "\n";
+                       << "iter=" << mCurIteration << "trc=" << *propagated << "trackNcl=" << cell2.trackFitFast.getNHits() << "trackChi2=" << cell2.trackFitFast.getChi2() << "chi2cl=" << cluchi2b << "\n";
         }
 #endif
         if (cluchi2b > maxChi2TrClu) {
@@ -651,7 +656,7 @@ void NA6PTrackerCA::findCellsNeighbours(const std::vector<CellCandidate>& cells,
 
 template <typename ClusterType>
 std::vector<TrackCandidate> NA6PTrackerCA::prolongSeed(const TrackCandidate& seed,
-                                                       const std::vector<CellCandidate>& cells,
+                                                       std::vector<CellCandidate>& cells,
                                                        const std::vector<int>& layers,
                                                        const std::vector<int>& firstIndex,
                                                        const std::vector<int>& lastIndex,
@@ -670,7 +675,7 @@ std::vector<TrackCandidate> NA6PTrackerCA::prolongSeed(const TrackCandidate& see
     next.clear();
     bool foundAnyProlongation = false;
     for (auto& cand : current) {
-      const CellCandidate& refCell = (dir == ExtendDirection::kInward) ? cells[cand.innerCellIndex] : cells[cand.outerCellIndex];
+      CellCandidate& refCell = (dir == ExtendDirection::kInward) ? cells[cand.innerCellIndex] : cells[cand.outerCellIndex];
       const int nextLayerTrackletIndex = (dir == ExtendDirection::kInward) ? refCell.firstTrackletIndex : refCell.secondTrackletIndex;
       int innerLayNextCell = -1;
       if (dir == ExtendDirection::kInward) {
@@ -694,7 +699,7 @@ std::vector<TrackCandidate> NA6PTrackerCA::prolongSeed(const TrackCandidate& see
         continue;
       }
       for (int jCe = firstIndex[innerLayNextCell]; jCe < lastIndex[innerLayNextCell]; ++jCe) {
-        const CellCandidate& ccNext = cells[jCe];
+        CellCandidate& ccNext = cells[jCe];
         if ((dir == ExtendDirection::kInward && ccNext.secondTrackletIndex != nextLayerTrackletIndex) ||
             (dir == ExtendDirection::kOutward && ccNext.firstTrackletIndex != nextLayerTrackletIndex))
           continue;
@@ -712,14 +717,19 @@ std::vector<TrackCandidate> NA6PTrackerCA::prolongSeed(const TrackCandidate& see
         }
         // --- Chi2 checks ---
         // Compute chi2 only for the innermost cluster of the cells to be connected
-        const auto& fitCurr = (dir == ExtendDirection::kInward) ? refCell.trackFitFast : ccNext.trackFitFast;
-        const auto& cluToAdd = (dir == ExtendDirection::kInward) ? cluArr[ccNext.cluIDs[0]] : cluArr[refCell.cluIDs[0]];
-        float chi2 = computeTrackToClusterChi2(fitCurr, cluToAdd);
+        const bool inward = dir == ExtendDirection::kInward;
+        auto& cell = inward ? refCell : ccNext;
+        const auto& cluToAdd = inward ? cluArr[ccNext.cluIDs[0]] : cluArr[refCell.cluIDs[0]];
+        const auto* propagated = getPropagatedCellTrack(cell, cluToAdd.getZ());
+        if (!propagated) {
+          continue;
+        }
+        float chi2 = propagated->getPredictedChi2(cluToAdd);
 #ifdef _CHI2_TUNING_MODE_
-        auto mcTruth = getTrackMCTruthStatus(cellTst.cluIDs, cluArr);
+        auto mcTruth = getTrackMCTruthStatus(cell.cluIDs, cluArr);
         if (mcTruth.isSet() && !mcTruth.isFake()) {
           (*dbgStream) << "chiProl"
-                       << "iter=" << mCurIteration << "trc=" << ((NA6PTrackParCov&)fitCurr) << "trackNcl=" << fitCurr.getNHits() << "trackChi2=" << fitCurr.getChi2() << "chi2cl=" << chi2 << "\n";
+                       << "iter=" << mCurIteration << "trc=" << *propagated << "trackNcl=" << cell.trackFitFast.getNHits() << "trackChi2=" << cell.trackFitFast.getChi2() << "chi2cl=" << chi2 << "\n";
         }
 #endif
         if (chi2 > maxChi2TrClu) {
@@ -764,7 +774,7 @@ std::vector<TrackCandidate> NA6PTrackerCA::prolongSeed(const TrackCandidate& see
 
 template <typename ClusterType>
 void NA6PTrackerCA::findRoads(const std::vector<std::pair<int, int>>& cneigh,
-                              const std::vector<CellCandidate>& cells,
+                              std::vector<CellCandidate>& cells,
                               const std::vector<int>& layers,
                               const std::vector<int>& firstIndex,
                               const std::vector<int>& lastIndex,
@@ -867,7 +877,6 @@ void NA6PTrackerCA::fitAndSelectTracks(const std::vector<TrackCandidate>& trackC
       }
       continue;
     }
-    // genfit::Track fitTrack;
     NA6PTrack fitTrackFast;
     float chi2Inw = fitTrackPointsFast(cluIDsForfit, cluArr, fitTrackFast, maxChi2TrClu, maxChi2NDF);
 #ifdef _CHI2_TUNING_MODE_
@@ -985,6 +994,7 @@ void NA6PTrackerCA::doIteration(int jIteration,
     printStats(mCellsNeighbours, cluArr, mFoundCells, "cell pairs");
   //
   findRoads(mCellsNeighbours, mFoundCells, layersToUse, firstCellPerLay, lastCellPerLay, mFoundTracklets, cluArr, mTrackCandidates, mMaxChi2TrClCellsCA[jIteration]);
+  mPropagatedCellTracks.clear();
   if (mVerbose)
     printStats(mTrackCandidates, cluArr, mFoundCells, "track candidates");
   //

@@ -49,7 +49,12 @@ struct CellCandidate {
   int secondTrackletIndex;
   std::array<int, 3> cluIDs;
   NA6PTrack trackFitFast;
-  //    genfit::Track trackFit;
+  int firstPropagatedTrack = -1; // Index in the temporary propagated state cache
+};
+
+struct PropagatedCellTrack {
+  NA6PTrackParCov track;
+  int next;
 };
 
 struct TrackCandidate {
@@ -76,7 +81,6 @@ struct TrackFitted {
   int nClus;
   std::vector<int> cluIDs;
   NA6PTrack trackFitFast;
-  //    genfit::Track trackFit;
   float chi2ndf;
 };
 
@@ -194,16 +198,13 @@ class NA6PTrackerCA
                          float maxChi2TrClu,
                          float maxChi2NDF);
   template <typename ClusterType>
-  float computeTrackToClusterChi2(const NA6PTrackParCov& track,
-                                  const ClusterType& clu);
-  template <typename ClusterType>
   float fitTrackPointsFast(const std::vector<int>& cluIDs,
                            const std::vector<ClusterType>& cluArr,
                            NA6PTrackParCov& fitTrack,
                            float maxChi2TrClu,
                            float maxChi2NDF);
   template <typename ClusterType>
-  void findCellsNeighbours(const std::vector<CellCandidate>& cells,
+  void findCellsNeighbours(std::vector<CellCandidate>& cells,
                            const std::vector<int>& layers,
                            const std::vector<int>& firstIndex,
                            const std::vector<int>& lastIndex,
@@ -212,7 +213,7 @@ class NA6PTrackerCA
                            float maxChi2TrClu);
   template <typename ClusterType>
   std::vector<TrackCandidate> prolongSeed(const TrackCandidate& seed,
-                                          const std::vector<CellCandidate>& cells,
+                                          std::vector<CellCandidate>& cells,
                                           const std::vector<int>& layers,
                                           const std::vector<int>& firstIndex,
                                           const std::vector<int>& lastIndex,
@@ -221,7 +222,7 @@ class NA6PTrackerCA
                                           ExtendDirection dir);
   template <typename ClusterType>
   void findRoads(const std::vector<std::pair<int, int>>& cneigh,
-                 const std::vector<CellCandidate>& cells,
+                 std::vector<CellCandidate>& cells,
                  const std::vector<int>& layers,
                  const std::vector<int>& firstIndex,
                  const std::vector<int>& lastIndex,
@@ -259,6 +260,8 @@ class NA6PTrackerCA
   bool clusterMCTruthMatch(const ClusterType& clu, const NA6PMCComposedLabel lblToMatch) const;
 
  private:
+  const NA6PTrackParCov* getPropagatedCellTrack(CellCandidate& cell, float z);
+
   static constexpr std::array<std::string_view, RecoType::NRecoType> mRecoTypeNames{"NONE", "VerTel", "MS"};
   RecoType mRecoType = RecoType::NONE;
   PID mPID{};
@@ -271,6 +274,7 @@ class NA6PTrackerCA
   std::vector<float> mLayersZ = {};
   std::vector<TrackletCandidate> mFoundTracklets = {};
   std::vector<CellCandidate> mFoundCells = {};
+  std::vector<PropagatedCellTrack> mPropagatedCellTracks; // Cached states for the current CA iteration
   std::vector<std::pair<int, int>> mCellsNeighbours = {};
   std::vector<TrackCandidate> mTrackCandidates = {};
   std::vector<TrackFitted> mIterationTracks = {};

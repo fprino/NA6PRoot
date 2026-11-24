@@ -16,15 +16,11 @@
 #define NA6P_GLAUBER_H
 
 #include "NA6PNuclearShape.h"
-class TRandom3;
-
 
 class NA6PGlauber : public TObject
 {
  public:
-  
-  struct GlauberEvent
-  {
+  struct GlauberEvent {
     float impactParameter;
     float phiImpPar;
     int nParticipants;
@@ -34,7 +30,13 @@ class NA6PGlauber : public TObject
     float eccentricity;
     std::vector<float> xPart, yPart;
     std::vector<float> xColl, yColl;
-    void clear() { xPart.clear(); yPart.clear(); xColl.clear(); yColl.clear(); }
+    void clear()
+    {
+      xPart.clear();
+      yPart.clear();
+      xColl.clear();
+      yColl.clear();
+    }
   };
 
   NA6PGlauber();
@@ -57,41 +59,55 @@ class NA6PGlauber : public TObject
   double getTa() const { return mTa; }
   double getTb() const { return mTb; }
   double getTaTb() const { return mTaTb; }
-  double getInteractionProbability() const {
+  double getInteractionProbability() const
+  {
     double pnin = std::pow((1. - mTAB * getSigmafm2()), mNuclA.getA() * mNuclB.getA());
     return 1. - pnin;
   }
   double getMeanX() const { return mX / mTaTb; }
   double getMeanY() const { return mY / mTaTb; }
-  double getVarX() const {
+  double getVarX() const
+  {
     double mX = getMeanX();
     return mXX / mTaTb - mX * mX;
   }
-  double getVarY() const {
+  double getVarY() const
+  {
     double mY = getMeanY();
     return mYY / mTaTb - mY * mY;
   }
   double getEccentricity() const;
-  double getAveragePartDens() const {
-    if (mNuclA.getA() == 1 || mNuclB.getA() == 1 || mTaTb <= 0.) return -999.;
+  double getAveragePartDens() const
+  {
+    if (mNuclA.getA() == 1 || mNuclB.getA() == 1 || mTaTb <= 0.)
+      return -999.;
     return mPartDens / mTaTb;
   }
-  double getMaximumPartDens() const {
-    if (mNuclA.getA() == 1 || mNuclB.getA() == 1 || mTaTb <= 0.) return -999.;
+  double getMaximumPartDens() const
+  {
+    if (mNuclA.getA() == 1 || mNuclB.getA() == 1 || mTaTb <= 0.)
+      return -999.;
     return mPartDensMax;
   }
-  double getAverageCollDens() const {
-    if (mNuclA.getA() == 1 || mNuclB.getA() == 1 || mTaTb <= 0.) return -999.;
-    return mCollDens /  mTaTb;
+  double getAverageCollDens() const
+  {
+    if (mNuclA.getA() == 1 || mNuclB.getA() == 1 || mTaTb <= 0.)
+      return -999.;
+    return mCollDens / mTaTb;
   }
-  double getMaximumCollDens() const {
-    if (mNuclA.getA() == 1 || mNuclB.getA() == 1 || mTaTb <= 0.) return -999.;
+  double getMaximumCollDens() const
+  {
+    if (mNuclA.getA() == 1 || mNuclB.getA() == 1 || mTaTb <= 0.)
+      return -999.;
     return mCollDensMax;
   }
   double getAverageNPart() const { return mAverNPart; }
-  double getAverageNPartInInteractions() const {
-    if (getInteractionProbability() > 0.) return mAverNPart/getInteractionProbability();
-    else return 0.;
+  double getAverageNPartInInteractions() const
+  {
+    if (getInteractionProbability() > 0.)
+      return mAverNPart / getInteractionProbability();
+    else
+      return 0.;
   }
   double getAverageNColl() const { return mNuclA.getA() * mNuclB.getA() * getSigmafm2() * mTAB; }
   double getRhoL() const { return mRhoL / mTaTb; }
@@ -103,8 +119,8 @@ class NA6PGlauber : public TObject
   double calcCollDensFromCoord(double x, double y, double b) const;
   bool isInside(double x, double y, double b) const;
 
-  GlauberEvent generateEvent(TRandom3 *gen, double bmin = -1., double bmax = -1., bool storePositions = false);
-  
+  GlauberEvent generateEvent(double bmin = -1., double bmax = -1., bool storePositions = false);
+
  private:
   NA6PNuclearShape mNuclA;
   NA6PNuclearShape mNuclB;

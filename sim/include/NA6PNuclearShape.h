@@ -19,7 +19,6 @@
 #include <span>
 
 class TF1;
-class TRandom3;
 
 class NA6PNuclearShape : public TObject
 {
@@ -82,7 +81,7 @@ class NA6PNuclearShape : public TObject
     return r * r * calcRho(r);
   }
   double integrateRho() const;
-  double getMaxRadius() const {return mMaxRadius;}
+  double getMaxRadius() const { return mMaxRadius; }
   void normalizeRho0();
 
   TF1 getDensity() const;
@@ -92,8 +91,8 @@ class NA6PNuclearShape : public TObject
     mYpos.fill(0.);
     mZpos.fill(0.);
   }
-  double sampleRadius(double rhoMax, TRandom3* gen, double rMin, double rMax) const;
-  void setNucleonPositions(double shiftx, double shifty, TRandom3* gen);
+  double sampleRadius(double rhoMax, double rMin, double rMax) const;
+  void setNucleonPositions(double shiftx, double shifty);
 
  private:
   int mZ = 82;                  // atomic number

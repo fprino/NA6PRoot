@@ -9,17 +9,17 @@
 #include "NA6PNuclearShape.h"
 #include "NA6PGlauber.h"
 
-
 void runOpticalGlauber(float bmin = 0,
                        float bmax = 18,
                        int nstep = 72,
-                       bool doProfiles = false){
+                       bool doProfiles = false)
+{
 
-  NA6PNuclearShape nucA,nucB;
+  NA6PNuclearShape nucA, nucB;
   nucA.setNucleusPb();
   nucB.setNucleusPb();
   float sigmb = 60.;
-  
+
   NA6PGlauber gl(nucA, nucB, sigmb);
   TNtuple* nt = new TNtuple("nt", "nt", "b:Ta:Tb:TaTb:sigmain:xmed:ymed:xrms:yrms:ecc:part:coll:pdensmed:pdensmax:L");
   float array[20];
@@ -32,16 +32,15 @@ void runOpticalGlauber(float bmin = 0,
           "<PartDens>", "PartDensMax", "<CollDens>",
           "CollDensMax", "<L>");
 
-
   float APro = nucA.getA();
   float ATgt = nucB.getA();
 
-  float  db = (bmax-bmin)/nstep;
-  TGraph *gpar = new TGraph();
-  TGraph *gcol = new TGraph();
+  float db = (bmax - bmin) / nstep;
+  TGraph* gpar = new TGraph();
+  TGraph* gcol = new TGraph();
 
   std::vector<float> bForProfiles;
-  
+
   for (int ib = 0; ib < nstep; ++ib) {
     float b = bmin + ib * db;
     if (std::abs(std::floor(b) - b) < 0.001) {
@@ -64,15 +63,15 @@ void runOpticalGlauber(float bmin = 0,
     float yy = gl.getVarY();
     float ecc = gl.getEccentricity();
     float nColl = gl.getAverageNColl();
-    float L = gl.getRhoL()/0.17;
-    if(b * 2 == int(b * 2)){
-      cout<<"b= "<<b<<" Npart="<<nPart<<" Ncoll="<<nColl<<" L="<<L<<endl;
+    float L = gl.getRhoL() / 0.17;
+    if (b * 2 == int(b * 2)) {
+      cout << "b= " << b << " Npart=" << nPart << " Ncoll=" << nColl << " L=" << L << endl;
     }
     gpar->SetPoint(ib, b, nPart);
     gcol->SetPoint(ib, b, nColl);
 
     fprintf(fil,
-    " %7.3f %9.4g %9.4f %8.2f %8.2f %8.2f %8.2f %9.3f %9.3f %9.3f %9.3f %10.3f %11.3f %10.3f %11.3f %9.3f\n",
+            " %7.3f %9.4g %9.4f %8.2f %8.2f %8.2f %8.2f %9.3f %9.3f %9.3f %9.3f %10.3f %11.3f %10.3f %11.3f %9.3f\n",
             b, ttab, sigmaIn, x, y, xx, yy, ecc, nPart, nPartInt, nColl, partDensAve, partDensMax, collDensAve, collDensMax, L);
     array[0] = b;
     array[1] = tta;
@@ -93,7 +92,7 @@ void runOpticalGlauber(float bmin = 0,
   }
   fclose(fil);
 
-  TCanvas *c1 = new TCanvas("c1", "", 700, 900);
+  TCanvas* c1 = new TCanvas("c1", "", 700, 900);
   c1->Divide(1, 2);
   c1->cd(1);
   gpar->Draw("AL");
@@ -104,7 +103,7 @@ void runOpticalGlauber(float bmin = 0,
   gcol->GetXaxis()->SetTitle("b (fm)");
   gcol->GetYaxis()->SetTitle("Number of Collisions");
   c1->Update();
-  
+
   // Draw density profiles
   int nProfs = bForProfiles.size();
   TH2F** hProfC = new TH2F*[nProfs];
@@ -115,41 +114,41 @@ void runOpticalGlauber(float bmin = 0,
     double dx = 0.1, dy = 0.1;
     double nptx = (2. * maxrad) / dx + 1.00001;
     double npty = (2. * maxrad) / dy + 1.00001;
-    double xmin=-maxrad;
-    double ymin=-maxrad;
-    double xmax=maxrad;
-    double ymax=maxrad;
-    
-    for (int j = 0 ; j < nProfs; ++j) {
+    double xmin = -maxrad;
+    double ymin = -maxrad;
+    double xmax = maxrad;
+    double ymax = maxrad;
+
+    for (int j = 0; j < nProfs; ++j) {
       float b = bForProfiles.at(j);
       hProfC[j] = new TH2F(Form("hCollProf%d", (int)b), Form("Collision density b = %.0f fm; x (fm); y (fm)", b), nptx, xmin, xmax, npty, ymin, ymax);
       hProfC[j]->SetStats(0);
       hProfP[j] = new TH2F(Form("hPartProf%d", (int)b), Form("Paticipant density b = %.0f fm; x (fm); y (fm)", b), nptx, xmin, xmax, npty, ymin, ymax);
       hProfP[j]->SetStats(0);
-      for(int ix = 0; ix < nptx; ++ix) {
+      for (int ix = 0; ix < nptx; ++ix) {
         double x = xmin + ix * dx;
         for (int iy = 0; iy < npty; ++iy) {
           double y = ymin + iy * dy;
-          double colld=gl.calcCollDensFromCoord(x, y, b);
+          double colld = gl.calcCollDensFromCoord(x, y, b);
           hProfC[j]->SetBinContent(iy + 1, ix + 1, colld);
-          double partd=gl.calcPartDensFromCoord(x, y, b);
+          double partd = gl.calcPartDensFromCoord(x, y, b);
           hProfP[j]->SetBinContent(iy + 1, ix + 1, partd);
         }
       }
     }
-    
+
     if (nProfs > 0) {
-      TCanvas * c2 = new TCanvas("c2", "", 1200, 600);
+      TCanvas* c2 = new TCanvas("c2", "", 1200, 600);
       if (nProfs > 1) {
         c2->Divide(2, 1);
         c2->cd(1);
       }
-      hProfP[0]->Draw("colz"); 
+      hProfP[0]->Draw("colz");
       float b = bForProfiles.at(0);
       double rA = nucA.getRadius();
       double rB = nucB.getRadius();
-      TArc *nA = new TArc(-b/2. ,0. ,rA);
-      TArc *nB = new TArc(b/2., 0., rB);
+      TArc* nA = new TArc(-b / 2., 0., rA);
+      TArc* nB = new TArc(b / 2., 0., rB);
       nA->SetLineColor(6);
       nB->SetLineColor(6);
       nA->SetFillStyle(0);
@@ -160,10 +159,10 @@ void runOpticalGlauber(float bmin = 0,
       nB->Draw();
       if (nProfs > 1) {
         c2->cd(2);
-        hProfP[nProfs - 1]->Draw("colz"); 
+        hProfP[nProfs - 1]->Draw("colz");
         b = bForProfiles.at(nProfs - 1);
-        TArc *nA2 = new TArc(-b/2. ,0. ,rA);
-        TArc *nB2 = new TArc(b/2., 0., rB);
+        TArc* nA2 = new TArc(-b / 2., 0., rA);
+        TArc* nB2 = new TArc(b / 2., 0., rB);
         nA2->SetLineColor(6);
         nB2->SetLineColor(6);
         nA2->SetFillStyle(0);
@@ -175,12 +174,12 @@ void runOpticalGlauber(float bmin = 0,
       }
     }
   }
-  
+
   TFile* fnt = new TFile("glauber_optical.root", "recreate");
   fnt->cd();
   nt->Write();
-  if (doProfiles) {   
-    for (int j = 0 ; j < nProfs; ++j) {
+  if (doProfiles) {
+    for (int j = 0; j < nProfs; ++j) {
       hProfC[j]->Write();
       hProfP[j]->Write();
     }

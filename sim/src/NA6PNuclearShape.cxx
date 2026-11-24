@@ -1,6 +1,6 @@
 // NA6PCCopyright
 
-#include <TRandom3.h>
+#include <TRandom.h>
 #include <TF1.h>
 #include <fairlogger/Logger.h>
 #include "NA6PNuclearShape.h"
@@ -9,7 +9,6 @@ NA6PNuclearShape::NA6PNuclearShape()
 {
   setNucleusPb();
 }
-
 
 NA6PNuclearShape::NA6PNuclearShape(int Z, int A)
 {
@@ -178,11 +177,11 @@ double NA6PNuclearShape::estimateRadialMax(double rMin, double rMax, int samples
   return maxVal * 1.1;
 }
 
-double NA6PNuclearShape::sampleRadius(double rhoMax, TRandom3* gen, double rMin, double rMax) const
+double NA6PNuclearShape::sampleRadius(double rhoMax, double rMin, double rMax) const
 {
   while (true) {
-    const double r = rMin + static_cast<double>(gen->Rndm()) * (rMax - rMin);
-    const double u = static_cast<double>(gen->Rndm()) * rhoMax;
+    const double r = rMin + static_cast<double>(gRandom->Rndm()) * (rMax - rMin);
+    const double u = static_cast<double>(gRandom->Rndm()) * rhoMax;
     if (u <= radialDensity(r)) {
       return r;
     }
@@ -198,7 +197,8 @@ double NA6PNuclearShape::calcSurfNuclDens(double x, double y, double zstep) cons
 
 double NA6PNuclearShape::calcSurfNuclDens(double x, double y, double zstep, double zm) const
 {
-  if (x * x + y * y >= mMaxRadius * mMaxRadius) return 0.;
+  if (x * x + y * y >= mMaxRadius * mMaxRadius)
+    return 0.;
   double tZ = 0.;
   double zmax = zm;
   double zmin = -zmax;
@@ -220,7 +220,7 @@ TF1 NA6PNuclearShape::getDensity() const
   return rho;
 }
 
-void NA6PNuclearShape::setNucleonPositions(double shiftx, double shifty, TRandom3* gen)
+void NA6PNuclearShape::setNucleonPositions(double shiftx, double shifty)
 {
   if (mA == 1) {
     mXpos[0] = shiftx;
@@ -235,9 +235,9 @@ void NA6PNuclearShape::setNucleonPositions(double shiftx, double shifty, TRandom
     int nAttempts = 0;
     double x, y, z;
     do {
-      double r = sampleRadius(mRadDensMax, gen, kRMin, mMaxRadius);
-      double phi = gen->Rndm() * 2. * M_PI;
-      double costh = gen->Rndm() * 2. - 1.;
+      double r = sampleRadius(mRadDensMax, kRMin, mMaxRadius);
+      double phi = gRandom->Rndm() * 2. * M_PI;
+      double costh = gRandom->Rndm() * 2. - 1.;
       double sinth = std::sqrt(std::max(0., 1. - costh * costh));
       x = r * sinth * std::cos(phi);
       y = r * sinth * std::sin(phi);

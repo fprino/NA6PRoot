@@ -7,12 +7,12 @@
 #include "NA6PNuclearShape.h"
 #include "NA6PGlauber.h"
 
+void runGlauberMC(int tottry = 20000,
+                  float bmin = -1.,
+                  float bmax = -1.)
+{
 
-void runGlauberMC(int tottry=20000,
-                  float bmin=-1.,
-                  float bmax=-1.) {
-  
-  NA6PNuclearShape nucA,nucB;
+  NA6PNuclearShape nucA, nucB;
   nucA.setNucleusPb();
   nucB.setNucleusPb();
   float sigmb = 30.;
@@ -20,13 +20,12 @@ void runGlauberMC(int tottry=20000,
   nucB.setMinimumDistanceBetweenNucleons(0.4);
 
   NA6PGlauber gl(nucA, nucB, sigmb);
-  TRandom3* gen = new TRandom3();
-  
-  TH1F *hNColl = new TH1F("hNColl", ";N_{coll};entries", 100, 0, 2000);
-  TH1F *hNPart = new TH1F("hNPart", ";N_{part};entries", 100, 0, 500);
-  TGraph *gNColl = new TGraph(0);
-  TGraph *gNPart = new TGraph(0);
-  TTree *tree = new TTree("treeEvents", "Nuclear collision events");
+
+  TH1F* hNColl = new TH1F("hNColl", ";N_{coll};entries", 100, 0, 2000);
+  TH1F* hNPart = new TH1F("hNPart", ";N_{part};entries", 100, 0, 500);
+  TGraph* gNColl = new TGraph(0);
+  TGraph* gNPart = new TGraph(0);
+  TTree* tree = new TTree("treeEvents", "Nuclear collision events");
   float b, phib, ecc;
   int nPart, nSpectA, nSpectB, nColl;
   tree->Branch("b", &b, "b/F");
@@ -38,7 +37,7 @@ void runGlauberMC(int tottry=20000,
   tree->Branch("eccentr", &ecc, "ecc/F");
 
   for (int itry = 0; itry < tottry; itry++) {
-    NA6PGlauber::GlauberEvent ev = gl.generateEvent(gen, bmin, bmax);
+    NA6PGlauber::GlauberEvent ev = gl.generateEvent(bmin, bmax);
     nColl = ev.nCollisions;
     nPart = ev.nParticipants;
     nSpectA = ev.nSpectatorsA;
@@ -46,7 +45,8 @@ void runGlauberMC(int tottry=20000,
     b = ev.impactParameter;
     phib = ev.phiImpPar;
     ecc = ev.eccentricity;
-    if((itry%2000)==0) printf("Event %d\n",itry);
+    if ((itry % 2000) == 0)
+      printf("Event %d\n", itry);
     hNColl->Fill(nColl);
     hNPart->Fill(nPart);
     gNColl->SetPoint(itry, b, nColl);
@@ -54,12 +54,12 @@ void runGlauberMC(int tottry=20000,
     tree->Fill();
   }
 
-  TFile *filout=new TFile("glauberMC.root","recreate");
+  TFile* filout = new TFile("glauberMC.root", "recreate");
   filout->cd();
   tree->Write();
   filout->Close();
 
-  TCanvas *c1 = new TCanvas("c1", "", 1200, 600);
+  TCanvas* c1 = new TCanvas("c1", "", 1200, 600);
   c1->Divide(2, 1);
   c1->cd(1);
   gPad->SetLogy();
@@ -67,11 +67,11 @@ void runGlauberMC(int tottry=20000,
   c1->cd(2);
   gPad->SetLogy();
   hNColl->Draw();
-  
+
   gNColl->SetMarkerStyle(7);
   gNPart->SetMarkerStyle(7);
 
-  TCanvas *c2 = new TCanvas("c2", "", 1400, 700);
+  TCanvas* c2 = new TCanvas("c2", "", 1400, 700);
   c2->Divide(2, 1);
   c2->cd(1);
   gNColl->Draw("AP");

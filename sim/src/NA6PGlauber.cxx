@@ -1,23 +1,20 @@
 // NA6PCCopyright
 
-
 #include <TMath.h>
-#include <TRandom3.h>
+#include <TRandom.h>
 #include <fairlogger/Logger.h>
 #include "NA6PGlauber.h"
 
-
-  NA6PGlauber::NA6PGlauber()
+NA6PGlauber::NA6PGlauber()
 {
   mNuclA.setNucleusPb();
   mNuclB.setNucleusPb();
   mSigmamb = 30.0;
 }
 
-NA6PGlauber::NA6PGlauber(const NA6PNuclearShape& nucA, const NA6PNuclearShape& nucB, double sigmb) :
-  mNuclA(nucA),
-  mNuclB(nucB),
-  mSigmamb(sigmb)
+NA6PGlauber::NA6PGlauber(const NA6PNuclearShape& nucA, const NA6PNuclearShape& nucB, double sigmb) : mNuclA(nucA),
+                                                                                                     mNuclB(nucB),
+                                                                                                     mSigmamb(sigmb)
 {
 }
 
@@ -30,7 +27,8 @@ void NA6PGlauber::setIntegrationSteps(double dx, double dy, double dz)
 
 double NA6PGlauber::getEccentricity() const
 {
-  if (mNuclA.getA() == 1 || mNuclB.getA() == 1 || mTaTb <= 0.) return -999.;
+  if (mNuclA.getA() == 1 || mNuclB.getA() == 1 || mTaTb <= 0.)
+    return -999.;
   const double varX = getVarX();
   const double varY = getVarY();
   const double sum = varX + varY;
@@ -61,10 +59,10 @@ void NA6PGlauber::doOpticalIntegrals(double b)
   double dxdy = dx * dy;
   int APro = mNuclA.getA();
   int ATgt = mNuclB.getA();
-  if (APro ==1 && ATgt == 1) {
+  if (APro == 1 && ATgt == 1) {
     LOGP(error, "pp case not treated");
     return;
-  } else if (APro ==1 || ATgt == 1) {
+  } else if (APro == 1 || ATgt == 1) {
     doOpticalIntegralsPA(b);
     return;
   }
@@ -182,17 +180,17 @@ bool NA6PGlauber::isInside(double x, double y, double b) const
   return false;
 }
 
-NA6PGlauber::GlauberEvent NA6PGlauber::generateEvent(TRandom3 *gen, double bmin, double bmax, bool storePositions)
+NA6PGlauber::GlauberEvent NA6PGlauber::generateEvent(double bmin, double bmax, bool storePositions)
 {
-  double r01 = gen->Rndm();
+  double r01 = gRandom->Rndm();
   if (bmin < 0) {
     bmin = 0.;
     bmax = mNuclA.getRadius() + 5. * mNuclA.getSkinDepth() + mNuclB.getRadius() + 5. * mNuclB.getSkinDepth();
   }
   double b = bmin;
-  if (bmax > bmin) 
+  if (bmax > bmin)
     b = std::sqrt(bmin * bmin + r01 * (bmax * bmax - bmin * bmin));
-  double phib = gen->Rndm() * 2. * M_PI;
+  double phib = gRandom->Rndm() * 2. * M_PI;
   double impparx = b * std::cos(phib);
   double imppary = b * std::sin(phib);
   GlauberEvent event;
@@ -201,8 +199,8 @@ NA6PGlauber::GlauberEvent NA6PGlauber::generateEvent(TRandom3 *gen, double bmin,
 
   const int A = mNuclA.getA();
   const int B = mNuclB.getA();
-  mNuclA.setNucleonPositions(0., 0., gen);
-  mNuclB.setNucleonPositions(impparx, imppary, gen);
+  mNuclA.setNucleonPositions(0., 0.);
+  mNuclB.setNucleonPositions(impparx, imppary);
   std::span<const double> xA = mNuclA.getXpos();
   std::span<const double> yA = mNuclA.getYpos();
   std::span<const double> xB = mNuclB.getXpos();
@@ -213,21 +211,21 @@ NA6PGlauber::GlauberEvent NA6PGlauber::generateEvent(TRandom3 *gen, double bmin,
       static_cast<int>(yB.size()) != B) {
     LOGP(error, "mismatch in array dimensions");
   }
-  
+
   double interactionRadiusSquare = getSigmafm2() / M_PI;
   std::array<int, NA6PNuclearShape::kMaxNucleons> isNucleonStruckA;
   std::array<int, NA6PNuclearShape::kMaxNucleons> isNucleonStruckB;
   std::fill(isNucleonStruckA.begin(), isNucleonStruckA.begin() + A, 0);
   std::fill(isNucleonStruckB.begin(), isNucleonStruckB.begin() + B, 0);
-  
-   int nColl = 0;
-  for(int ia = 0; ia < A; ++ia){
-    for(int ib = 0; ib < B; ++ib){
+
+  int nColl = 0;
+  for (int ia = 0; ia < A; ++ia) {
+    for (int ib = 0; ib < B; ++ib) {
       double dx = xA[ia] - xB[ib];
       double dy = yA[ia] - yB[ib];
       double distSquare = dx * dx + dy * dy;
-      if(distSquare <= interactionRadiusSquare){
-         ++nColl;
+      if (distSquare <= interactionRadiusSquare) {
+        ++nColl;
         isNucleonStruckA[ia] += 1;
         isNucleonStruckB[ib] += 1;
         if (storePositions) {
@@ -239,7 +237,7 @@ NA6PGlauber::GlauberEvent NA6PGlauber::generateEvent(TRandom3 *gen, double bmin,
   }
   int nPartA = 0, nPartB = 0;
   double sumx = 0., sumx2 = 0., sumy = 0., sumy2 = 0., sumxy = 0.;
-  for (int ia = 0; ia < A; ++ia){
+  for (int ia = 0; ia < A; ++ia) {
     if (isNucleonStruckA[ia] > 0) {
       ++nPartA;
       sumx += xA[ia];
@@ -254,13 +252,13 @@ NA6PGlauber::GlauberEvent NA6PGlauber::generateEvent(TRandom3 *gen, double bmin,
     }
   }
   for (int ib = 0; ib < B; ++ib) {
-    if (isNucleonStruckB[ib] > 0) {	
+    if (isNucleonStruckB[ib] > 0) {
       ++nPartB;
       sumx += xB[ib];
       sumx2 += (xB[ib] * xB[ib]);
       sumy += yB[ib];
       sumy2 += (yB[ib] * yB[ib]);
-      sumxy += (xB[ib] * yB[ib]);	
+      sumxy += (xB[ib] * yB[ib]);
       if (storePositions) {
         event.xPart.push_back(xB[ib]);
         event.yPart.push_back(yB[ib]);
@@ -279,11 +277,12 @@ NA6PGlauber::GlauberEvent NA6PGlauber::generateEvent(TRandom3 *gen, double bmin,
   double sigmay2 = sumy2 - sumy * sumy;
   double sigmaxy = sumxy - sumx * sumy;
   double ecc = -999.;
-  if ((sigmax2 + sigmay2) > 0.) ecc = std::sqrt((sigmay2 - sigmax2) * (sigmay2 - sigmax2) + 4.0 * sigmaxy * sigmaxy) / (sigmax2 + sigmay2);
+  if ((sigmax2 + sigmay2) > 0.)
+    ecc = std::sqrt((sigmay2 - sigmax2) * (sigmay2 - sigmax2) + 4.0 * sigmaxy * sigmaxy) / (sigmax2 + sigmay2);
 
   event.nParticipants = nPart;
-  event.nSpectatorsA   = A - nPartA;
-  event.nSpectatorsB   = B - nPartB;
+  event.nSpectatorsA = A - nPartA;
+  event.nSpectatorsB = B - nPartB;
   event.nCollisions = nColl;
   event.eccentricity = ecc;
   return event;

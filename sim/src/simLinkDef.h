@@ -56,6 +56,9 @@
 
 #pragma link C++ class NA6PGenBeam + ;
 
+#pragma link C++ class NA6PNuclearShape + ;
+#pragma link C++ class NA6PGlauber + ;
+
 #pragma link C++ class GenMUONLMR + ;
 
 #pragma link C++ class UserHook + ;

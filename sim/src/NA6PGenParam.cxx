@@ -41,6 +41,13 @@ void NA6PGenParam::init()
   if (isInitDone()) {
     return;
   }
+  initMultiplicity();
+
+  NA6PGenerator::init();
+}
+
+void NA6PGenParam::initMultiplicity()
+{
   if (!TDatabasePDG::Instance()->GetParticle(mPDGCode)) {
     LOGP(fatal, "Particle PDG={} is not defined", mPDGCode);
   }
@@ -103,8 +110,6 @@ void NA6PGenParam::init()
   mFunTrans->Print();
   LOGP(info, "Longitudinal distribution in {:.2f}<{}<{:.2f}", mFunLong->GetXmin(), isLongY() ? "Y" : "Eta", mFunLong->GetXmax());
   mFunLong->Print();
-
-  NA6PGenerator::init();
 }
 
 void NA6PGenParam::setParametersTrans(const std::vector<float>& v)

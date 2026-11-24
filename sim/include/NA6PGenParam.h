@@ -17,6 +17,7 @@ class NA6PGenParam : public NA6PGenerator
   void generate() override;
 
   void init() override;
+  void initMultiplicity();
 
   auto getPDGCode() const { return mPDGCode; }
   auto getFunTrans() const { return mFunTrans.get(); }

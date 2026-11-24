@@ -30,6 +30,7 @@ set(DICTIONARY_HEADERS
   NA6PMCGenHeader.h
   NA6PGenBox.h
   NA6PGenParam.h
+  NA6PGenGlauberParam.h
   NA6PGenHisto.h
   NA6PGenHepMC.h
   NA6PGenCocktail.h

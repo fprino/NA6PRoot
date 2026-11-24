@@ -38,6 +38,7 @@
 
 #pragma link C++ class NA6PGenBox + ;
 #pragma link C++ class NA6PGenParam + ;
+#pragma link C++ class NA6PGenGlauberParam + ;
 #pragma link C++ class NA6PGenHepMC + ;
 #pragma link C++ class NA6PGenHisto + ;
 #pragma link C++ class NA6PGenCocktail + ;

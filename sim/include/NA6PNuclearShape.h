@@ -39,17 +39,19 @@ class NA6PNuclearShape : public TObject
   void setShapeParameters(double r0, double wid, double w, int e);
   void setMinimumDistanceBetweenNucleons(double d) { mMinNucleonDist = d; }
   void setNucleusFromParametrization(int Z, int A);
-  void setNucleusC();     // C-12      3-parameters Fermi model
-  void setNucleusO();     // O-16      3-parameters Fermi model
-  void setNucleusS();     // S-32      3-parameters Fermi model
-  void setNucleusAr2pF(); // Ar-40     2-parameters Fermi model (Default)
-  void setNucleusAr3pF(); // Ar-40     3-parameters Fermi model
-  void setNucleusCu2pF(); // Cu-63     2-parameters Fermi model (Default)
-  void setNucleusCu3pG(); // Cu-63     3-parameters Gaussian model
-  void setNucleusIn();    // In-115    2-parameters Fermi model
-  void setNucleusAu();    // Au-197    2-parameters Fermi model
-  void setNucleusPb();    // Pb-208    2-parameters Fermi model
-  void setNucleusU();     // U-238     2-parameters Fermi model
+  void setNucleusC();     // C-12      3-parameter Fermi model
+  void setNucleusO();     // O-16      3-parameter Fermi model
+  void setNucleusAl();    // Al-27     2-parameter Fermi model
+  void setNucleusS();     // S-32      3-parameter Fermi model
+  void setNucleusAr2pF(); // Ar-40     2-parameter Fermi model (Default)
+  void setNucleusAr3pF(); // Ar-40     3-parameter Fermi model
+  void setNucleusFe();    // Fe-56     2-parameter Fermi model
+  void setNucleusCu2pF(); // Cu-63     2-parameter Fermi model (Default)
+  void setNucleusCu3pG(); // Cu-63     3-parameter Gaussian model
+  void setNucleusIn();    // In-115    2-parameter Fermi model
+  void setNucleusAu();    // Au-197    2-parameter Fermi model
+  void setNucleusPb();    // Pb-208    2-parameter Fermi model
+  void setNucleusU();     // U-238     2-parameter Fermi model
 
   int getZ() const { return mZ; }
   int getA() const { return mA; }

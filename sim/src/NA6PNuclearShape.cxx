@@ -66,6 +66,13 @@ void NA6PNuclearShape::setNucleusO()
   setShapeParameters(2.608, 0.513, -0.051, 1);
 }
 
+void NA6PNuclearShape::setNucleusAl()
+{
+  mZ = 13;
+  mA = 27;
+  setShapeParameters(3.07, 0.519, 0., 1);
+}
+
 void NA6PNuclearShape::setNucleusS()
 {
   mZ = 16;
@@ -85,6 +92,13 @@ void NA6PNuclearShape::setNucleusAr3pF()
   mZ = 18;
   mA = 40;
   setShapeParameters(3.735, 0.621, -0.194, 1);
+}
+
+void NA6PNuclearShape::setNucleusFe()
+{
+  mZ = 26;
+  mA = 56;
+  setShapeParameters(3.971, 0.5935, 0., 1);
 }
 
 void NA6PNuclearShape::setNucleusCu2pF()

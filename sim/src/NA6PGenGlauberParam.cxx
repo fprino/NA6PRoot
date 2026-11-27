@@ -178,7 +178,7 @@ void NA6PGenGlauberParam::generate()
   nGenerated += generateSpecies(mGenKPlus, nParticipants);
   nGenerated += generateSpecies(mGenProtons, nParticipants);
   int nSpecGenerated = 0;
-  if (nCollisions > 0) {
+  if (mGenerateSpectators && nCollisions > 0) {
     generateProjectileSpectators(nSpectA, mGlauberMC.getNucleusA().getZ(), mGlauberMC.getNucleusA().getA());
     nSpecGenerated = nSpectA;
   }

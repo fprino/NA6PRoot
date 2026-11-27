@@ -16,6 +16,8 @@ class NA6PGenGlauberParam : public NA6PGenerator
   NA6PGenGlauberParam(const NA6PGlauber& gl, float bmin = 0., float bmax = 20.);
   ~NA6PGenGlauberParam() override = default;
   void setKeepOnlyEventsWithInteraction(bool opt) { mKeepOnlyInteracting = opt; }
+  void setGenerateSpectators(bool opt) { mGenerateSpectators = opt; }
+
   void generate() override;
 
   void init() override;
@@ -31,6 +33,7 @@ class NA6PGenGlauberParam : public NA6PGenerator
   float mYMax = 5.f;                // maximum y
   float mNParticipantsRef = 350.f;  // n. of participants in reference events
   bool mKeepOnlyInteracting = true; // keep only events with >=1 NN collision
+  bool mGenerateSpectators = true;  // flag to enable/disable spectators
   NA6PGenParam mGenPiMinus;         // parametrized generator for pi-
   NA6PGenParam mGenPiPlus;          // parametrized generator for pi+
   NA6PGenParam mGenKMinus;          // parametrized generator for K-
